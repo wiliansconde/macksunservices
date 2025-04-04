@@ -72,6 +72,8 @@ class Main:
         fits_service = ClsPoemasFITSFileService()
         fits_service.generate_fits_files(input_json_folder, output_fits_folder)
 
+
+
     @staticmethod
     def create_fits_file_by_time_range(date_to_generate_file):
 
