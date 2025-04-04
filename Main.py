@@ -174,44 +174,20 @@ if __name__ == "__main__":
     #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\_Carga_teste\wilians-daniel\2012\M07\D09')
     #2
     #Main.process_queue(False)
-    #for zz in range(140):
-    #    print()
-    #    ClsFileQueueController.process_next_file()
+    # for zz in range(15):
+    #     print()
+    #     ClsFileQueueController.process_next_file()
     #3
-    """
-    2012-07-08
-    2012-01-27
-    2013-10-24
-    2012-01-26
-    2013-10-29
-    2013-10-28
-    2013-10-25
-    2012-07-07
-    date_to_generate_file = datetime(2012, 7, 8) em andamento
-    date_to_generate_file = datetime(2012, 1, 27)em andamento
-    date_to_generate_file = datetime(2013, 10, 24)em andamento
-    date_to_generate_file = datetime(2012, 1, 26)em andamento
-    date_to_generate_file = datetime(2013, 10, 29)em andamento
-    date_to_generate_file = datetime(2013, 10, 28)em andamento
-    date_to_generate_file = datetime(2013, 10, 25)em andamento
-    date_to_generate_file = datetime(2012, 7, 7)em andamento
-    date_to_generate_file = datetime(2012, 7, 8)em andamento
-    date_to_generate_file = datetime(2012, 7, 9)em andamento
-    
-    prof. paylo
-    date_to_generate_file = datetime(2011, 12, 24)em andamento
-    date_to_generate_file = datetime(2011, 12, 25)em andamento
-    date_to_generate_file = datetime(2011, 12, 26)em andamento
 
-    """
+    # 4
     date_to_generate_file = datetime(2012, 7, 9)
-    Main.create_fits_file_by_time_range(date_to_generate_file)
-    #4
+    #Main.create_fits_file_by_time_range(date_to_generate_file)
+
+    #5 From FITS to TXT
     #Main.create_txt_file_from_fits_file()
 
-
+    #6 From FITS to JSON
     #Main.create_fits_file_by_json_directory()
-
     #Main.create_json_file_from_fits_file()
     #
 

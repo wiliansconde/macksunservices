@@ -3,7 +3,7 @@
 import os
 
 
-class Settings:
+class xxxxxxSettings:
     # Configurações do MongoDB
     # MONGO_HOST = os.getenv('MONGO_HOST', 'localhost')
     # MONGO_PORT = int(os.getenv('MONGO_PORT', 27017))
