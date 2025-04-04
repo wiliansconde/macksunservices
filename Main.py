@@ -65,6 +65,7 @@ class Main:
 
 
 
+
         FileManager.delete_all_in_directory(output_fits_folder)
 
         # Criando uma instância da classe e chamando o método para converter JSONs em arquivos FITS
