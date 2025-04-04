@@ -1,0 +1,5 @@
+class ProcessStatus:
+    PENDING = "PENDING"
+    IN_PROCESSING = "IN_PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
