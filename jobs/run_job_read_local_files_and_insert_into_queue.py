@@ -20,9 +20,6 @@ Recomendação de uso:
     ➤ Ideal para configurar um agendamento (cron ou task scheduler) por **diretório monitorado**.
 
 Uso manual:
-    python run_job_read_local_files_and_insert_into_queue.py "C:/w/y/POEMAS"
-    python run_job_read_local_files_and_insert_into_queue.py "C:/w/y/SST"
-
     No command DOS:
     1. Navegue até a raiz do projeto:
        cd C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Craam_Loader
