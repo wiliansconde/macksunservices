@@ -25,13 +25,10 @@ class ClsFormat:
     @staticmethod
     def format_file_path(file_path) -> str:
         # Ajusta o FILEPATH para começar a partir do primeiro ano completo após 1999
-        match = re.search(r'(19[9][9]|20\d{2})', file_path)
+        match = re.search(r'(POEMAS|SST)', file_path)
         if match:
-            year = match.group(0)
-            year_index = file_path.index(match.group(0))
-            file_path = file_path[year_index:]
-            # Substitui a primeira ocorrência do ano e remove duplicidades
-            file_path = file_path.replace(year, '', 1).lstrip('\\/')
+            start_index = file_path.index(match.group(0))
+            return file_path[start_index:].lstrip("\\/")
         return file_path
 
     @staticmethod

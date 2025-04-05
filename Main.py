@@ -171,17 +171,17 @@ if __name__ == "__main__":
     #Main.discovery_file_from_fits_file_structure()
 
     #1
-    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\_Carga_teste\wilians-daniel\2012\M07\D09')
+    Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2012\M07\D09')
     #2
     #Main.process_queue(False)
-    for zz in range(15):
-         print()
-         ClsFileQueueController.process_next_file()
+    # for zz in range(15):
+    #      print()
+    #      ClsFileQueueController.process_next_file()
     #3
 
     # 4
-    date_to_generate_file = datetime(2012, 7, 9)
-    Main.create_fits_file_by_time_range(date_to_generate_file)
+    # date_to_generate_file = datetime(2012, 7, 9)
+    # Main.create_fits_file_by_time_range(date_to_generate_file)
 
     #5 From FITS to TXT
     #Main.create_txt_file_from_fits_file()
