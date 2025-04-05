@@ -154,3 +154,6 @@ class ClsFileQueueService:
             #volta o status da fila para pending
             ClsFileQueueService.update_file_reset_status_to_pending(file_path)
 
+    @staticmethod
+    def count_pending_files() -> int:
+        return ClsFileQueueRepository.count_pending_files()

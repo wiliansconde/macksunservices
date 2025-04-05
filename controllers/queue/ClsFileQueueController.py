@@ -33,3 +33,8 @@ class ClsFileQueueController:
     @staticmethod
     def delete_incomplete_records_and_reset_queue_status():
         ClsFileQueueService.delete_incomplete_records_and_reset_queue_status()
+
+    @staticmethod
+    def count_pending_files() -> int:
+        return ClsFileQueueService.count_pending_files()
+

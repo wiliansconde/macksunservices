@@ -123,3 +123,9 @@ class ClsFileQueueRepository:
         file_paths = [file["FILEPATH"] for file in files_in_processing]
 
         return file_paths
+
+    @staticmethod
+    def count_pending_files() -> int:
+        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_QUEUE)
+        return collection.count_documents({"STATUS": "PENDING"})
+

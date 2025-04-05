@@ -174,9 +174,9 @@ if __name__ == "__main__":
     #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\_Carga_teste\wilians-daniel\2012\M07\D09')
     #2
     #Main.process_queue(False)
-    # for zz in range(15):
-    #     print()
-    #     ClsFileQueueController.process_next_file()
+    for zz in range(15):
+         print()
+         ClsFileQueueController.process_next_file()
     #3
 
     # 4
