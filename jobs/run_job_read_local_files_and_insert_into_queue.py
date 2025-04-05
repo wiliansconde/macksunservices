@@ -9,6 +9,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 """
+**********************************************************************************
+*******************  RODE ESSE ANTES DO PROCESS_QUEUE ****************************
+**********************************************************************************
+
 Job: run_job_read_local_files_and_insert_into_queue.py
 
 Descrição:

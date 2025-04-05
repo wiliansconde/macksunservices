@@ -181,7 +181,7 @@ if __name__ == "__main__":
 
     # 4
     date_to_generate_file = datetime(2012, 7, 9)
-    #Main.create_fits_file_by_time_range(date_to_generate_file)
+    Main.create_fits_file_by_time_range(date_to_generate_file)
 
     #5 From FITS to TXT
     #Main.create_txt_file_from_fits_file()
