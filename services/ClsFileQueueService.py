@@ -61,7 +61,9 @@ class ClsFileQueueService:
             if not file_vo:
                 print("No pending files in the queue.")
                 return
+
             CLSConsolePrint.debug(f'Processando arquivo {file_path}')
+
             file_path = file_vo.FILEPATH
             ClsLoggerService.write_file_selected_for_processing(file_path)
             full_path = ClsFileQueueService._handle_compressed_file(file_vo)

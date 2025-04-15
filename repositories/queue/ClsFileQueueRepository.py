@@ -37,6 +37,9 @@ class ClsFileQueueRepository:
 
         if next_file:
             file_path = next_file.get('FILEPATH', '')
+            print("")
+            print('ARQUIVO PROC: ' + file_path)
+            print("")
             try:
                 collection_name = ClsSettings.get_mongo_collection_name_by_file_type(file_path)
                 collection.update_one(

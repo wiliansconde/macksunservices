@@ -54,7 +54,7 @@ class ClsPoemasFITSFileService:
 
     def generate_fits_fits_file_by_time_range(self, date_to_generate_file):
         records = ClsPoemasFileRepository.get_records_by_time_range(date_to_generate_file)
-        directory_path = r"C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\_Carga_teste"
+        directory_path = r"C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\FITS_gerados"
         formatted_date = date_to_generate_file.strftime("%Y-%m-%d")  # Formata para "ano-mes-dia"
         full_file_path = os.path.join(directory_path, f"{formatted_date}.fits")
 

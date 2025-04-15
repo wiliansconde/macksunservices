@@ -15,4 +15,5 @@ class CLSConsolePrint:
 
     @staticmethod
     def debug(message):
+        print("")
         print(f"{CLSConsolePrint._get_timestamp()} - DEBUG - Mensagem: {message}\n")

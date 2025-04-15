@@ -2,13 +2,16 @@ import os
 import time
 from datetime import datetime
 
+from pymongo import MongoClient
+
 from controllers.queue.ClsFileQueueController import ClsFileQueueController
 from services.ClsPoemasFITSFileService import ClsPoemasFITSFileService
 from utils.ClsConsolePrint import CLSConsolePrint
 from utils.ClsFormat import ClsFormat
 from utils.FileManager import FileManager
 from utils.test import PoemasDataPlotter
-
+from datetime import datetime
+from datetime import datetime, timedelta
 
 class Main:
     @staticmethod
@@ -95,8 +98,8 @@ class Main:
     @staticmethod
     def create_txt_file_from_fits_file():
         # Definindo o caminho da pasta de entrada com JSONs e a pasta de saída para os arquivos FITS
-        fits_file_path = r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\_Carga_teste\2012-01-26.fits'  # Exemplo: "C:/dados/fits/2023-03-15.fits"
-        output_json_folder = r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\_Carga_teste\a.txt'  # Exemplo: "C:/dados/jsons/"
+        fits_file_path = r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\FITS_gerados\2024-07-27.fits'  # Exemplo: "C:/dados/fits/2023-03-15.fits"
+        output_json_folder = r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\FITS_gerados\2024-07-27.txt'  # Exemplo: "C:/dados/jsons/"
 
         # Criando uma instância da classe e chamando o método para converter FITS em JSONs
         fits_service = ClsPoemasFITSFileService()  # Pastas de entrada e saída para JSONs não são necessárias aqui
@@ -108,6 +111,41 @@ class Main:
         fits_file_path = r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\_Carga_teste\a.fits'  # Exemplo: "C:/dados/fits/2023-03-15.fits"
         ClsPoemasFITSFileService.discover_fits_structure(fits_file_path)
 
+    @staticmethod
+    def contar_documentos():
+        try:
+            client = MongoClient("mongodb://localhost:27027")
+            db = client["craam_data"]
+            collection = db["data_POEMAS_file_10ms"]
+
+            # Início e fim do intervalo
+            start = datetime(2010, 12, 1)
+            end = datetime(2025, 5, 1)
+            delta = timedelta(days=1)
+
+            print("Contagem de documentos a cada 10 dias (UTC_TIME):\n")
+
+            current = start
+            while current < end:
+                next_ = current + delta
+                try:
+                    count = collection.count_documents({
+                        "UTC_TIME": {
+                            "$gte": current,
+                            "$lt": next_
+                        }
+                    })
+
+                    print(f"{current.strftime('%Y-%m-%d')} a {next_.strftime('%Y-%m-%d')}: {count}")
+                except Exception as e:
+                    print(f"{current.strftime('%Y-%m-%d')} a {next_.strftime('%Y-%m-%d')}: ERRO - {e}")
+                current = next_
+
+        except Exception as conn_error:
+            print(f"Erro de conexão com MongoDB: {conn_error}")
+
+
+    #
     """
     POEMAS
     Main.read_local_files_and_insert_into_queue(
@@ -120,19 +158,19 @@ class Main:
 
     FAST
     Main.read_local_files_and_insert_into_queue(
-        r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\M02\D18\fast')
+        r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\2002\M02\D18\fast')
 
     INTG
     Main.read_local_files_and_insert_into_queue(
-        r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\M02\D18\intg')
+        r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\2002\M02\D18\intg')
 
     # BI FILES
     Main.read_local_files_and_insert_into_queue(
-        r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\M02\D18\instr')
+        r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\2002\M02\D18\instr')
 
     # Funcionou para inserir na fila usando ClsFileQueueController:
     ClsFileQueueController.insert(
-        r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2024\M01\D01\instr'
+        r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2024\2024\M01\D01\instr'
         r'\bi1240101'
     )
 
@@ -163,6 +201,7 @@ if __name__ == "__main__":
     #poemas =  PoemasDataPlotter(file_path)
     #poemas.plot_temperature_vs_time()
 
+    #Main.contar_documentos()
 
     Main.initialize_process()
     #Main.delete_incomplete_records_and_reset_queue_status()
@@ -170,18 +209,51 @@ if __name__ == "__main__":
     #Main.create_json_file_from_fits_file()
     #Main.discovery_file_from_fits_file_structure()
 
+    #GERALLLLL
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS')
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST')
+
+
     #1
-    Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2012\M07\D09')
+    #POEMAS
+    Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2024\M08')
+
+    Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2013\M09')
+
+    Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2012\M07')
+
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2011\M12\D06')
+    
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2011\M12\D06')
+    
+    """XXXX """
+
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST')
+
+    #SST - FAST
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\2002\M02\D18\fast')
+
+    #SST - INTG
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\2002\M02\D18\intg')
+
+    #SST - BI FILES
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\2002\M02\D18\instr')
+
     #2
+    #Processr lote de 3k
     #Main.process_queue(False)
-    # for zz in range(15):
-    #      print()
-    #      ClsFileQueueController.process_next_file()
+
+    #Loop por 15x para pegar da fila
+    """ XX 
+    for zz in range(5050):
+         print()
+         ClsFileQueueController.process_next_file()
+    """
     #3
 
     # 4
-    # date_to_generate_file = datetime(2012, 7, 9)
-    # Main.create_fits_file_by_time_range(date_to_generate_file)
+    #date_to_generate_file = datetime(2024, 7, 24)
+    #Main.create_fits_file_by_time_range(date_to_generate_file)
 
     #5 From FITS to TXT
     #Main.create_txt_file_from_fits_file()
