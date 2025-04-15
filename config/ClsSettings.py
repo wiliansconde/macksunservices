@@ -10,7 +10,7 @@ class ClsSettings:
      MONGO_DB_NAME = os.getenv('MONGO_DB_NAME', 'craam_data')
      MONGO_USER = os.getenv('MONGO_USER', '')
      MONGO_PASSWORD = os.getenv('MONGO_PASSWORD', '')
-     MONGO_BATCH_SIZE_TO_INSERT = 15000
+     MONGO_BATCH_SIZE_TO_INSERT = 25000
      @staticmethod
      def get_mongo_uri():
          if ClsSettings.MONGO_USER and ClsSettings.MONGO_PASSWORD:
