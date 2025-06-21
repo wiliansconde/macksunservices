@@ -6,6 +6,9 @@ import time as t
 from pymongo.errors import PyMongoError
 
 from config.ClsSettings import ClsSettings
+from controllers.partitioning.ClsPartition_map_controller import ClsPartitionMapController
+from enums.ClsInstrumentEnum import ClsInstrumentEnum
+from enums.ClsResolutionEnum import ClsResolutionEnum
 
 from models.poemas.ClsPoemasVO import ClsPoemasVO
 from repositories.poemas.ClsPoemasFileRepository import ClsPoemasFileRepository
@@ -62,26 +65,36 @@ class ClsPoemasFileService:
     def process_file(file_path) -> int:
         service = ClsPoemasFileService(file_path)
         service.process_records()
-        service.insert_records_to_mongodb()
+        file_timestamp = datetime.strptime(service.records[0].DATE, "%Y-%m-%d")
+        service.insert_records_to_mongodb(file_timestamp)
         return len(service.records)
 
-    def insert_records_to_mongodb(self) -> str:
+    def insert_records_to_mongodb(self, timestamp) -> str:
         batch_size = ClsSettings.MONGO_BATCH_SIZE_TO_INSERT  # Tamanho do lote para inserções em massa
-        mongo_collection = ClsSettings.get_mongo_collection_name_by_file_type(self.file_path)
+        #mongo_collection = ClsSettings.get_mongo_collection_name_by_file_type(self.file_path)
+
+        controller = ClsPartitionMapController()
+        mongo_collection = controller.get_target_collection(ClsInstrumentEnum.POEMAS, ClsResolutionEnum.Seconds_01, timestamp)
+
         #AQUI.... ...
         #AQUI....retornar o batch para Logica para criar arquivo
         for i in range(0, len(self.records), batch_size):
             batch = self.records[i:i + batch_size]
-            res = ClsPoemasFileRepository.insert_records(batch, self.file_path)
 
-            ClsLoggerService.write_processing_batch(self.file_path, batch_size, mongo_collection)
-            if res.failed_count > 0:
-                ClsLoggerService.write_failed_lines(self.file_path, res.failed_count)
-            if res.duplicate_count > 0:
-                ClsLoggerService.write_duplicate_lines(self.file_path, res.duplicate_count)
+            try:
+                res = ClsPoemasFileRepository.insert_records(batch, self.file_path, mongo_collection)
 
-            ClsLoggerService.write_lines_inserted(self.file_path, res.inserted_count)
-            CLSConsolePrint.debug(f"Lote de {len(batch)} registros inserido com sucesso.")
+
+                ClsLoggerService.write_processing_batch(self.file_path, batch_size, mongo_collection)
+                if res.failed_count > 0:
+                    ClsLoggerService.write_failed_lines(self.file_path, res.failed_count)
+                if res.duplicate_count > 0:
+                    ClsLoggerService.write_duplicate_lines(self.file_path, res.duplicate_count)
+
+                ClsLoggerService.write_lines_inserted(self.file_path, res.inserted_count)
+                CLSConsolePrint.debug(f"Lote de {len(batch)} registros inserido com sucesso.")
+            except Exception as e:
+                print(str(e))
         return mongo_collection
 
     def process_records(self, flux=False, ms=False):

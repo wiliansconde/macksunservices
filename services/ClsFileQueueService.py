@@ -72,7 +72,7 @@ class ClsFileQueueService:
             file_size = ClsGet.get_file_size(full_path)
 
             ClsFileQueueService.update_file_size(file_path, file_size)
-            file_lines_qty = ClsFileQueueService._process_file_by_type(file_name, full_path)
+            file_lines_qty = ClsFileQueueService._process_file_by_telescope_type(file_name, full_path)
 
             ClsFileQueueService.update_file_lines_qty(file_path, file_lines_qty)
             ClsFileQueueService.update_file_status_completed(file_path)
@@ -98,7 +98,7 @@ class ClsFileQueueService:
         return full_path
 
     @staticmethod
-    def _process_file_by_type(file_name: str, full_path: str) -> int:
+    def _process_file_by_telescope_type(file_name: str, full_path: str) -> int:
         file_name = file_name.lower()
         if file_name.startswith(('rf', 'rs')):
             return ClsRFandRSFileService.process_file(full_path)

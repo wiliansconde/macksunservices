@@ -4,13 +4,28 @@ import os
 
 
 class ClsSettings:
-    # # Configurações do MongoDB
+     # # Configurações do MongoDB ** LOCAL **
      MONGO_HOST = os.getenv('MONGO_HOST', 'localhost')
-     MONGO_PORT = int(os.getenv('MONGO_PORT', 27027))
+     MONGO_PORT = int(os.getenv('MONGO_PORT', 27027)) #27031 STAND -27027 SHARDING
      MONGO_DB_NAME = os.getenv('MONGO_DB_NAME', 'craam_data')
      MONGO_USER = os.getenv('MONGO_USER', '')
      MONGO_PASSWORD = os.getenv('MONGO_PASSWORD', '')
-     MONGO_BATCH_SIZE_TO_INSERT = 25000
+     MONGO_BATCH_SIZE_TO_INSERT = 100000
+
+     # # Configurações do MongoDB ** AZURE **
+     """MONGO_HOST = os.getenv('MONGO_HOST', 'mongosrv.mongocluster.cosmos.azure.com')
+     MONGO_PORT = int(os.getenv('MONGO_PORT', 27017))
+
+     MONGO_DB_NAME = os.getenv('MONGO_DB_NAME', 'macksundb')
+     MONGO_USER = os.getenv('MONGO_USER', 'usrmongosrv')
+     MONGO_PASSWORD = os.getenv('MONGO_PASSWORD', 'Teste.100')
+
+     MONGO_TLS = True
+     MONGO_AUTH_MECHANISM = 'SCRAM-SHA-256'
+     MONGO_BATCH_SIZE_TO_INSERT = 1500
+     """
+
+
      @staticmethod
      def get_mongo_uri():
          if ClsSettings.MONGO_USER and ClsSettings.MONGO_PASSWORD:
@@ -25,6 +40,7 @@ class ClsSettings:
      MONGO_COLLECTION_DATA_SST_RS_FILE_40MS = 'data_SST_rs_file_40ms'
      MONGO_COLLECTION_DATA_SST_BI_FILE_1S = 'data_SST_bi_file_1s'
      MONGO_COLLECTION_DATA_POEMAS_FILE_10ms = 'data_POEMAS_file_10ms'
+     MONGO_COLLECTION_PARTITION_MAP = 'partition_map'
     #
     # # Configurações do MongoDB AZURE (Cosmos DB via URI completa)
     # MONGO_HOST = "mongosrv.mongocluster.cosmos.azure.com"

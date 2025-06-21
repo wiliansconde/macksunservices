@@ -38,10 +38,12 @@ class run_job_process_queue:
     @staticmethod
     def run():
         try:
+
             total = ClsFileQueueController.count_pending_files()
             print(f"[{datetime.now()}] [Processor] Iniciando processamento de {total} arquivos na fila...")
 
             for i in range(total):
+
                 print(f"[Processor] {i+1}/{total} processando...")
                 ClsFileQueueController.process_next_file()
 

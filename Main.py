@@ -4,6 +4,7 @@ from datetime import datetime
 
 from pymongo import MongoClient
 
+from controllers.partitioning.ClsPartition_map_controller import ClsPartitionMapController
 from controllers.queue.ClsFileQueueController import ClsFileQueueController
 from services.ClsPoemasFITSFileService import ClsPoemasFITSFileService
 from utils.ClsConsolePrint import CLSConsolePrint
@@ -112,6 +113,22 @@ class Main:
         ClsPoemasFITSFileService.discover_fits_structure(fits_file_path)
 
     @staticmethod
+    def renomear_pdfs_em_sequencia(pasta: str):
+        arquivos = [f for f in os.listdir(pasta) if f.lower().endswith('.pdf')]
+        arquivos.sort()  # ordena alfabeticamente (opcional)
+
+        for i, nome_antigo in enumerate(arquivos, start=1):
+            nome_novo = f"{i}_{nome_antigo}"
+            caminho_antigo = os.path.join(pasta, nome_antigo)
+            caminho_novo = os.path.join(pasta, nome_novo)
+
+            if not os.path.exists(caminho_novo):  # evita sobrescrever
+                os.rename(caminho_antigo, caminho_novo)
+                print(f"Renomeado: {nome_antigo} → {nome_novo}")
+            else:
+                print(f"Já existe: {nome_novo}, pulando...")
+
+    @staticmethod
     def contar_documentos():
         try:
             client = MongoClient("mongodb://localhost:27027")
@@ -143,6 +160,21 @@ class Main:
 
         except Exception as conn_error:
             print(f"Erro de conexão com MongoDB: {conn_error}")
+
+    @staticmethod
+    def test_get_target_collection():
+        controller = ClsPartitionMapController()
+
+        instrument = "POEMAS"
+        resolution = "10ms"
+        start_date = datetime(2013, 1, 31, 0, 0, 0)
+        end_date = datetime(2013, 2, 1, 23, 59, 59)
+
+        try:
+            target_collection = controller.get_collections_for_range(instrument, resolution, start_date, end_date)
+            print(f"[TESTE] Collection resolvida: {target_collection}")
+        except Exception as e:
+            print(f"[TESTE] Erro ao resolver collection: {e}")
 
 
     #
@@ -196,6 +228,8 @@ class Main:
     """
 
 if __name__ == "__main__":
+    Main.test_get_target_collection()
+
     # Exemplo de uso:
     #file_path = r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\_Carga_teste\a.txt'
     #poemas =  PoemasDataPlotter(file_path)
@@ -203,7 +237,8 @@ if __name__ == "__main__":
 
     #Main.contar_documentos()
 
-    Main.initialize_process()
+
+    #Main.initialize_process()
     #Main.delete_incomplete_records_and_reset_queue_status()
     #Main.create_fits_file_by_json_directory()
     #Main.create_json_file_from_fits_file()
@@ -216,11 +251,33 @@ if __name__ == "__main__":
 
     #1
     #POEMAS
-    Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2024\M08')
+    #15M
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2011\M11\D27')
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2011\M11\D28')
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2011\M11\D29')
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2011\M11\D30')
 
-    Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2013\M09')
+    #150M
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2024\M08')
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2019\M10')
 
-    Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2012\M07')
+
+    #500
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2019\M10')
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2011\M12')
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2012\M04')
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2013\M06')
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2019\M09')
+
+    #1 B
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2012\M01')
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2013\M02')
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2019\M11')
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2024\M05')
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2024\M06')
+    #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2012\M07')
+
+
 
     #Main.read_local_files_and_insert_into_queue(r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2011\M12\D06')
     

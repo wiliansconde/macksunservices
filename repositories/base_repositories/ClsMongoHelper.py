@@ -16,6 +16,10 @@ class ClsMongoHelper:
         return db[collection_name]
 
     @staticmethod
+    def get_mongo_client():
+        return ClsConnection.get_mongo_client()
+
+    @staticmethod
     def insert_vo_to_mongodb(vo, collection_name):
         client = ClsConnection.get_mongo_client()
         db = client[ClsConnection.get_mongo_db_name()]
