@@ -2,6 +2,7 @@ import sys
 import traceback
 from datetime import datetime
 from controllers.queue.ClsFileQueueController import ClsFileQueueController
+from controllers.queue.ClsGenerateFileQueueController import ClsGenerateFileQueueController
 
 """
 Job: run_job_process_queue.py
@@ -34,7 +35,7 @@ Requisitos:
     - ClsFileQueueController acessível em controllers.queue
 """
 
-class run_job_process_queue:
+class run_job_file_ingestion_queue_processor:
     @staticmethod
     def run():
         try:
@@ -47,6 +48,9 @@ class run_job_process_queue:
                 print(f"[Processor] {i+1}/{total} processando...")
                 ClsFileQueueController.process_next_file()
 
+            print(f"[{datetime.now()}] [Processor] Atualizando fila de geração de arquivos (Generate File Queue)...")
+            ClsGenerateFileQueueController.populate_queue_from_stats()
+
             print(f"[{datetime.now()}] [Processor] Processamento concluído.")
 
         except Exception:
@@ -56,4 +60,4 @@ class run_job_process_queue:
 
 
 if __name__ == "__main__":
-    run_job_process_queue.run()
+    run_job_file_ingestion_queue_processor.run()

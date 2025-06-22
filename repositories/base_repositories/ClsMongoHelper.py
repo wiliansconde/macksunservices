@@ -1,8 +1,10 @@
+import time
 from datetime import datetime
 from typing import List
 from pymongo import errors
 from pymongo.errors import PyMongoError
 
+from config.ClsSettings import ClsSettings
 from repositories.base_repositories.ClsConnection import ClsConnection
 from repositories.base_repositories.ClsProcessingResult import ClsProcessingResult
 
@@ -10,26 +12,40 @@ from repositories.base_repositories.ClsProcessingResult import ClsProcessingResu
 class ClsMongoHelper:
     @staticmethod
     def get_collection(collection_name):
-        client = ClsConnection.get_mongo_client()
-        db_name = ClsConnection.get_mongo_db_name()
+        client = ClsConnection.get_mongo_data_client()
+        db_name = ClsConnection.get_mongo_data_db_name()
+        db = client[db_name]
+        return db[collection_name]
+
+    @staticmethod
+    def get_portal_collection(collection_name):
+        client = ClsConnection.get_mongo_portal_client()
+        db_name = ClsConnection.get_mongo_portal_db_name()
         db = client[db_name]
         return db[collection_name]
 
     @staticmethod
     def get_mongo_client():
-        return ClsConnection.get_mongo_client()
+        return ClsConnection.get_mongo_data_client()
 
     @staticmethod
     def insert_vo_to_mongodb(vo, collection_name):
-        client = ClsConnection.get_mongo_client()
-        db = client[ClsConnection.get_mongo_db_name()]
+        client = ClsConnection.get_mongo_data_client()
+        db = client[ClsConnection.get_mongo_data_db_name()]
         collection = db[collection_name]
         record_dict = vo.to_dict()
 
         collection.insert_one(record_dict)
 
     @staticmethod
-    def find_records_by_time_range(mongo_collection, date_to_generate_file, limit=10000000):
+    def get_data_collection(collection_name: str):
+        client = ClsConnection.get_mongo_data_client()
+        db = client[ClsSettings.MONGO_DB_DATA]
+        return db[collection_name]
+
+    @staticmethod
+    def find_records_by_time_range(mongo_collection_name, date_to_generate_file, limit=10000000):
+
         """
         Busca documentos que correspondem ao intervalo especificado de tempo, com um limite opcional.
         O intervalo é definido por UTC_TIME_YEAR, UTC_TIME_MONTH, UTC_TIME_DAY e UTC_TIME_HOUR.
@@ -48,13 +64,19 @@ class ClsMongoHelper:
         }
 
         # Executa a consulta com o limite de documentos
-        records = list(mongo_collection.find(query).sort("_id")) #.limit(limit))
+        collection = ClsMongoHelper.get_data_collection(mongo_collection_name)
+
+        start = time.time()
+        records = list(collection.find(query).sort("_id"))  # .limit(limit)
+        duration = time.time() - start
+
+        print(f"[QUERY] {len(records)} documentos encontrados em {duration:.2f} segundos.")
         return records
 
     @staticmethod
     def insert_vos_to_mongodb(vos: List, collection_name: str, file_path: str) -> ClsProcessingResult:
-        client = ClsConnection.get_mongo_client()
-        db = client[ClsConnection.get_mongo_db_name()]
+        client = ClsConnection.get_mongo_data_client()
+        db = client[ClsConnection.get_mongo_data_db_name()]
         collection = db[collection_name]
 
         # Converter lista de VOs para uma lista de dicionários

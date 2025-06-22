@@ -9,12 +9,12 @@ from services.ClsPoemasFileService import ClsPoemasFileService
 from services.ClsRFandRSFileService import ClsRFandRSFileService
 from services.ClsSSTBIFileService import ClsSSTBIFileService
 
-from repositories.queue.ClsFileQueueRepository import ClsFileQueueRepository
+from repositories.queue.ClsFileIngestionQueueRepository import ClsFileIngestionQueueRepository
 from utils.ClsConsolePrint import CLSConsolePrint
 
 from utils.ClsFormat import ClsFormat
 from utils.ClsGet import ClsGet
-from utils.GzipHandler import GzipHandler
+from utils.ZipHelper import ZipHelper
 
 
 class ClsFileQueueService:
@@ -42,7 +42,7 @@ class ClsFileQueueService:
                 created_by='system_initial_load'
             )
 
-            r = ClsFileQueueRepository.insert(file_queue_vo)
+            r = ClsFileIngestionQueueRepository.insert(file_queue_vo)
             if r:
                 ClsLoggerService.write_initial_log_pending_status(file_path, 'system_initial_load')
 
@@ -57,7 +57,7 @@ class ClsFileQueueService:
         CLSConsolePrint.debug('iniciando process_next_file')
         file_path = ""
         try:
-            file_vo = ClsFileQueueRepository.get_next_pending_file()
+            file_vo = ClsFileIngestionQueueRepository.get_next_pending_file()
             if not file_vo:
                 print("No pending files in the queue.")
                 return
@@ -90,7 +90,7 @@ class ClsFileQueueService:
     @staticmethod
     def _handle_compressed_file(file_vo: ClsFileQueueVO) -> str:
         if file_vo.FILE_FULL_PATH.endswith('.gz'):
-            full_path = GzipHandler.decompress_gz(file_vo.FILE_FULL_PATH)
+            full_path = ZipHelper.decompress_gz(file_vo.FILE_FULL_PATH)
             original_file_name=f"{file_vo.FILEPATH}{file_vo.ZIP_FILE_TYPE}"
             ClsLoggerService.write_unziped_file(original_file_name, ClsFormat.format_file_path(full_path))
         else:
@@ -111,32 +111,32 @@ class ClsFileQueueService:
 
     @staticmethod
     def update_file_status_completed(file_path: str):
-        ClsFileQueueRepository.update_file_status_completed(file_path)
+        ClsFileIngestionQueueRepository.update_file_status_completed(file_path)
         ClsLoggerService.write_complete_process_success(file_path)
 
     @staticmethod
     def update_file_reset_status_to_pending(file_path: str):
-        ClsFileQueueRepository.update_file_status_pending(file_path)
+        ClsFileIngestionQueueRepository.update_file_status_pending(file_path)
         ClsLoggerService.write_file_reset_to_pending(file_path)
 
 
     @staticmethod
     def update_file_status_failed(file_path: str, error_message: str, error_trace: str):
-        ClsFileQueueRepository.update_file_status_failed(file_path, error_message)
+        ClsFileIngestionQueueRepository.update_file_status_failed(file_path, error_message)
         ClsLoggerService.write_complete_process_failed(file_path, error_message, error_trace)
 
     @staticmethod
     def update_collection_name(file_path: str, collection_name: str):
-        ClsFileQueueRepository.update_collection_name(file_path, collection_name)
+        ClsFileIngestionQueueRepository.update_collection_name(file_path, collection_name)
 
     @staticmethod
     def update_file_size(file_path: str, file_size_mb):
-        ClsFileQueueRepository.update_file_size(file_path, file_size_mb)
+        ClsFileIngestionQueueRepository.update_file_size(file_path, file_size_mb)
         ClsLoggerService.write_file_size(file_path, file_size_mb)
 
     @staticmethod
     def update_file_lines_qty(file_path: str, lines_qty):
-        ClsFileQueueRepository.update_file_lines_qty(file_path, lines_qty)
+        ClsFileIngestionQueueRepository.update_file_lines_qty(file_path, lines_qty)
         ClsLoggerService.write_file_lines_qty(file_path, lines_qty)
 
     @staticmethod
@@ -148,7 +148,7 @@ class ClsFileQueueService:
         # Lista todos os arquivos com status "IN_PROCESSING"
 
         # Busca a lista de arquivos em processamento usando o método do repositório
-        file_paths = ClsFileQueueRepository.get_files_in_processing()
+        file_paths = ClsFileIngestionQueueRepository.get_files_in_processing()
 
         for file_path in file_paths:
             # Deleta os registros da coleção apropriada
@@ -158,4 +158,4 @@ class ClsFileQueueService:
 
     @staticmethod
     def count_pending_files() -> int:
-        return ClsFileQueueRepository.count_pending_files()
+        return ClsFileIngestionQueueRepository.count_pending_files()

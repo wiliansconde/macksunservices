@@ -2,7 +2,7 @@ import os
 import os
 
 class ClsMongoCollections:
-    FILE_QUEUE = 'file_queue'
+    FILE_INGESTION_QUEUE = 'file_ingestion_queue'
     PROCESSED_FILE_TRACE = 'processed_file_trace'
     DATA_SST_RF_FILE_05MS: str = 'data_SST_rf_file_05ms'
     DATA_SST_RS_FILE_40MS = 'data_SST_rs_file_40ms'

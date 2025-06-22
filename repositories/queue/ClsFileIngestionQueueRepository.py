@@ -10,9 +10,9 @@ from utils.ClsFormat import ClsFormat
 from utils.ClsGet import ClsGet
 
 
-class ClsFileQueueRepository:
+class ClsFileIngestionQueueRepository:
     def insert(file_queue_vo: ClsFileQueueVO) -> bool:
-        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_QUEUE)
+        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_INGESTION_QUEUE)
         record = file_queue_vo.to_dict()
         try:
             collection.insert_one(record)
@@ -25,7 +25,7 @@ class ClsFileQueueRepository:
 
     @staticmethod
     def get_next_pending_file() -> Optional[ClsFileQueueVO]:
-        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_QUEUE)
+        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_INGESTION_QUEUE)
 
         next_file = collection.find_one_and_update(
             {'STATUS': ProcessStatus.PENDING},
@@ -57,7 +57,7 @@ class ClsFileQueueRepository:
 
     @staticmethod
     def update_file_status_completed(file_path: str):
-        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_QUEUE)
+        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_INGESTION_QUEUE)
         update_fields = {
             'STATUS': ProcessStatus.COMPLETED,
             'LAST_UPDATED_TIMESTAMP': ClsGet.current_time(),
@@ -68,7 +68,7 @@ class ClsFileQueueRepository:
 
     @staticmethod
     def update_file_status_failed(file_path: str, error_message: str = ''):
-        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_QUEUE)
+        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_INGESTION_QUEUE)
         update_fields = {
             'STATUS': ProcessStatus.FAILED,
             'LAST_UPDATED_TIMESTAMP': ClsGet.current_time(),
@@ -80,7 +80,7 @@ class ClsFileQueueRepository:
     @staticmethod
     def update_file_status_pending(file_path: str):
         file_path = ClsFormat.format_and_sanitize_path_and_remove_prefix(file_path)
-        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_QUEUE)
+        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_INGESTION_QUEUE)
         update_fields = {
             'STATUS': ProcessStatus.PENDING,
             'LAST_UPDATED_TIMESTAMP': ClsGet.current_time()
@@ -88,7 +88,7 @@ class ClsFileQueueRepository:
         collection.update_one({'FILEPATH': file_path}, {'$set': update_fields})
     @staticmethod
     def update_collection_name(file_path: str, collection_name: str):
-        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_QUEUE)
+        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_INGESTION_QUEUE)
         collection.update_one(
             {'FILEPATH': file_path},
             {'$set': {'COLLECTION_NAME': collection_name}}
@@ -96,7 +96,7 @@ class ClsFileQueueRepository:
 
     @staticmethod
     def update_file_size(file_path: str, file_size_mb):
-        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_QUEUE)
+        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_INGESTION_QUEUE)
         update_fields = {
             'FILE_SIZE': f'{file_size_mb:.2f} MB',
             'LAST_UPDATED_TIMESTAMP': ClsGet.current_time()
@@ -107,7 +107,7 @@ class ClsFileQueueRepository:
     @staticmethod
     def update_file_lines_qty(file_path: str, lines_qty):
         file_path = ClsFormat.format_and_sanitize_path_and_remove_prefix(file_path)
-        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_QUEUE)
+        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_INGESTION_QUEUE)
         update_fields = {
             'FILE_LINES_QTY': str(lines_qty),
             'LAST_UPDATED_TIMESTAMP': ClsGet.current_time()
@@ -117,7 +117,7 @@ class ClsFileQueueRepository:
     @staticmethod
     def get_files_in_processing() -> list:
         # Obtém a coleção file_queue
-        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_QUEUE)
+        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_INGESTION_QUEUE)
 
         # Busca todos os registros com STATUS "IN_PROCESSING"
         files_in_processing = collection.find({"STATUS": "IN_PROCESSING"}, {"FILEPATH": 1})
@@ -129,6 +129,6 @@ class ClsFileQueueRepository:
 
     @staticmethod
     def count_pending_files() -> int:
-        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_QUEUE)
+        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_FILE_INGESTION_QUEUE)
         return collection.count_documents({"STATUS": "PENDING"})
 

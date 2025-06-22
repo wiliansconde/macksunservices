@@ -6,7 +6,10 @@ from pymongo import MongoClient
 
 from controllers.partitioning.ClsPartition_map_controller import ClsPartitionMapController
 from controllers.queue.ClsFileQueueController import ClsFileQueueController
-from services.ClsPoemasFITSFileService import ClsPoemasFITSFileService
+from controllers.queue.ClsTimeSeriesExportQueueController import ClsTimeSeriesExportQueueController
+from enums.ClsInstrumentEnum import ClsInstrumentEnum
+from enums.ClsResolutionEnum import ClsResolutionEnum
+from services.ClsPoemasExportFileService import ClsPoemasExportFileService
 from utils.ClsConsolePrint import CLSConsolePrint
 from utils.ClsFormat import ClsFormat
 from utils.FileManager import FileManager
@@ -61,28 +64,12 @@ class Main:
         ret = ClsFileQueueController.delete_incomplete_records_and_reset_queue_status()
 
 
-    @staticmethod
-    def create_fits_file_by_json_directory():
-        # Definindo o caminho da pasta de entrada com JSONs e a pasta de saída para os arquivos FITS
-        input_json_folder = r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\xxJson'  # Exemplo: "C:/dados/jsons/"
-        output_fits_folder = r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\xxFits'  # Exemplo: "C:/dados/fits/"
-
-
-
-
-        FileManager.delete_all_in_directory(output_fits_folder)
-
-        # Criando uma instância da classe e chamando o método para converter JSONs em arquivos FITS
-        fits_service = ClsPoemasFITSFileService()
-        fits_service.generate_fits_files(input_json_folder, output_fits_folder)
-
-
 
     @staticmethod
     def create_fits_file_by_time_range(date_to_generate_file):
 
         # Criando uma instância da classe e chamando o método para converter JSONs em arquivos FITS
-        fits_service = ClsPoemasFITSFileService()
+        fits_service = ClsPoemasExportFileService()
         fits_service.generate_fits_fits_file_by_time_range(date_to_generate_file)
 
     @staticmethod
@@ -93,7 +80,7 @@ class Main:
         FileManager.delete_all_in_directory(output_json_folder)
 
         # Criando uma instância da classe e chamando o método para converter FITS em JSONs
-        fits_service = ClsPoemasFITSFileService(None, None)  # Pastas de entrada e saída para JSONs não são necessárias aqui
+        fits_service = ClsPoemasExportFileService(None, None)  # Pastas de entrada e saída para JSONs não são necessárias aqui
         fits_service.convert_fits_to_json_snapshot(fits_file_path, output_json_folder)
 
     @staticmethod
@@ -103,14 +90,14 @@ class Main:
         output_json_folder = r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\FITS_gerados\2024-07-27.txt'  # Exemplo: "C:/dados/jsons/"
 
         # Criando uma instância da classe e chamando o método para converter FITS em JSONs
-        fits_service = ClsPoemasFITSFileService()  # Pastas de entrada e saída para JSONs não são necessárias aqui
+        fits_service = ClsPoemasExportFileService()  # Pastas de entrada e saída para JSONs não são necessárias aqui
         fits_service.export_fits_to_txt(fits_file_path, output_json_folder)
 
     @staticmethod
     def discovery_file_from_fits_file_structure():
         # Definindo o caminho da pasta de entrada com JSONs e a pasta de saída para os arquivos FITS
         fits_file_path = r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\_Carga_teste\a.fits'  # Exemplo: "C:/dados/fits/2023-03-15.fits"
-        ClsPoemasFITSFileService.discover_fits_structure(fits_file_path)
+        ClsPoemasExportFileService.discover_fits_structure(fits_file_path)
 
     @staticmethod
     def renomear_pdfs_em_sequencia(pasta: str):
@@ -164,18 +151,18 @@ class Main:
     @staticmethod
     def test_get_target_collection():
         controller = ClsPartitionMapController()
-
-        instrument = "POEMAS"
-        resolution = "10ms"
-        start_date = datetime(2013, 1, 31, 0, 0, 0)
-        end_date = datetime(2013, 2, 1, 23, 59, 59)
-
+        start_date = datetime(2011, 12, 1, 0, 0, 0)
+        end_date = datetime(2011, 12, 1, 23, 59, 59)
+#2011-12-01T10:19:46.000Z
         try:
-            target_collection = controller.get_collections_for_range(instrument, resolution, start_date, end_date)
+            target_collection = controller.get_collections_for_range(ClsInstrumentEnum.POEMAS, ClsResolutionEnum.Seconds_01, start_date, end_date)
             print(f"[TESTE] Collection resolvida: {target_collection}")
         except Exception as e:
             print(f"[TESTE] Erro ao resolver collection: {e}")
 
+    @staticmethod
+    def test_TimeSeriesExportQueueController():
+        ClsTimeSeriesExportQueueController.process_next_pending_request()
 
     #
     """
@@ -228,7 +215,8 @@ class Main:
     """
 
 if __name__ == "__main__":
-    Main.test_get_target_collection()
+    #Main.test_get_target_collection()
+    Main.test_TimeSeriesExportQueueController()
 
     # Exemplo de uso:
     #file_path = r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\_Carga_teste\a.txt'

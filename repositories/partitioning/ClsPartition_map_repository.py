@@ -37,7 +37,7 @@ class ClsPartitionMapRepository:
     @staticmethod
     def create_time_series_collection_if_not_exists(collection_name: str, resolution: ClsResolutionEnum):
         mongo_client = ClsMongoHelper.get_mongo_client()
-        db_name = ClsSettings.MONGO_DB_NAME
+        db_name = ClsSettings.MONGO_DB_DATA
         db = mongo_client[db_name]
 
         if collection_name not in db.list_collection_names():

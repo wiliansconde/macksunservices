@@ -32,3 +32,16 @@ class ClsResolutionEnum(Enum):
 
         except Exception as e:
             raise ValueError(f"Resolução inválida: {resolution}. Erro: {str(e)}")
+
+    @staticmethod
+    def from_value(value: str):
+        """
+        Converte uma string (ex: '10ms') em um membro do Enum.
+
+        :param value: String com o valor da resolução.
+        :return: Membro do ClsResolutionEnum correspondente.
+        """
+        for member in ClsResolutionEnum:
+            if member.value == value:
+                return member
+        raise ValueError(f"Valor '{value}' não encontrado no Enum ClsResolutionEnum.")

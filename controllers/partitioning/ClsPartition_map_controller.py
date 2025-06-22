@@ -19,7 +19,7 @@ class ClsPartitionMapController:
         print('ClsPartitionMapController - descobrindo a collection')
         return self.resolver_service.get_target_collection(instrument, resolution, timestamp)
 
-    def get_collections_for_range(self, instrument: str, resolution: str, start_date: datetime, end_date: datetime) -> List[str]:
+    def get_collections_for_range(self, instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum, start_date: datetime, end_date: datetime) -> List[str]:
         print('+++++++++++++++++++++++++++++++++++++++++++++++++++++')
         print('ClsPartitionMapController - descobrindo a collection')
         print('ClsPartitionMapController - descobrindo a collection')

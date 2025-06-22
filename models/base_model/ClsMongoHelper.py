@@ -12,15 +12,15 @@ from MongoDB.ClsProcessingResult import ClsProcessingResult
 class ClsMongoHelper:
     @staticmethod
     def get_collection(collection_name):
-        client = ClsConnection.get_mongo_client()
-        db_name = ClsConnection.get_mongo_db_name()
+        client = ClsConnection.get_mongo_data_client()
+        db_name = ClsConnection.get_mongo_data_db_name()
         db = client[db_name]
         return db[collection_name]
 
     @staticmethod
     def insert_vo_to_mongodb(vo, collection_name):
-        client = ClsConnection.get_mongo_client()
-        db = client[ClsConnection.get_mongo_db_name()]
+        client = ClsConnection.get_mongo_data_client()
+        db = client[ClsConnection.get_mongo_data_db_name()]
         collection = db[collection_name]
         record_dict = vo.to_dict()
 
@@ -35,8 +35,8 @@ class ClsMongoHelper:
 
     @staticmethod
     def insert_vos_to_mongodb(vos: List, collection_name: str, file_path: str) -> ClsProcessingResult:
-        client = ClsConnection.get_mongo_client()
-        db = client[ClsConnection.get_mongo_db_name()]
+        client = ClsConnection.get_mongo_data_client()
+        db = client[ClsConnection.get_mongo_data_db_name()]
         collection = db[collection_name]
 
         # Converter lista de VOs para uma lista de dicionários

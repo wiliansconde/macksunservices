@@ -12,6 +12,7 @@ from enums.ClsResolutionEnum import ClsResolutionEnum
 
 from models.poemas.ClsPoemasVO import ClsPoemasVO
 from repositories.poemas.ClsPoemasFileRepository import ClsPoemasFileRepository
+from services.ClsDataAvailabilityStatsService import ClsDataAvailabilityStatsService
 from services.ClsLoggerService import ClsLoggerService
 from utils.ClsConsolePrint import CLSConsolePrint
 from utils.ClsFormat import ClsFormat
@@ -66,18 +67,24 @@ class ClsPoemasFileService:
         service = ClsPoemasFileService(file_path)
         service.process_records()
         file_timestamp = datetime.strptime(service.records[0].DATE, "%Y-%m-%d")
-        service.insert_records_to_mongodb(file_timestamp)
+        instrument = ClsInstrumentEnum.POEMAS
+        resolution = ClsResolutionEnum.Milliseconds_10
+        controller = ClsPartitionMapController()
+        mongo_collection = controller.get_target_collection(instrument,resolution, file_timestamp)
+
+        service.insert_records_to_mongodb(file_timestamp, instrument, resolution, mongo_collection)
+
+        ClsDataAvailabilityStatsService.recalculate_for_day(instrument, resolution,file_timestamp,mongo_collection)
+
+
         return len(service.records)
 
-    def insert_records_to_mongodb(self, timestamp) -> str:
+    def insert_records_to_mongodb(self, timestamp, instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum, mongo_collection) -> str:
         batch_size = ClsSettings.MONGO_BATCH_SIZE_TO_INSERT  # Tamanho do lote para inserções em massa
         #mongo_collection = ClsSettings.get_mongo_collection_name_by_file_type(self.file_path)
 
-        controller = ClsPartitionMapController()
-        mongo_collection = controller.get_target_collection(ClsInstrumentEnum.POEMAS, ClsResolutionEnum.Seconds_01, timestamp)
 
-        #AQUI.... ...
-        #AQUI....retornar o batch para Logica para criar arquivo
+
         for i in range(0, len(self.records), batch_size):
             batch = self.records[i:i + batch_size]
 

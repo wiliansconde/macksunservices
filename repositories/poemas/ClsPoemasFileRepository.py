@@ -24,16 +24,16 @@ class ClsPoemasFileRepository:
         print(f"{deleted_count} documentos deletados da coleção {mongo_collection} para o arquivo: {file_path}")
 
     @staticmethod
-    def get_records_by_time_range(date_to_generate_file,  mongo_collection, limit=1000):
+    def get_records_by_time_range(date_to_generate_file, mongo_collection_name, limit=1000):
         """
         Obtém os registros com base no intervalo de tempo fornecido e aplica um limite opcional.
         """
         #mongo_collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_DATA_POEMAS_FILE_10ms)
-        records = ClsMongoHelper.find_records_by_time_range(mongo_collection, date_to_generate_file, limit)
+        records = ClsMongoHelper.find_records_by_time_range(mongo_collection_name, date_to_generate_file, limit)
 
         if records:
-            print(f"{len(records)} documentos encontrados na coleção {mongo_collection}")
+            print(f"{len(records)} documentos encontrados na coleção {mongo_collection_name}")
         else:
-            print(f"Nenhum documento encontrado na coleção {mongo_collection} para o intervalo de tempo especificado.")
+            print(f"Nenhum documento encontrado na coleção {mongo_collection_name} para o intervalo de tempo especificado.")
 
         return records
