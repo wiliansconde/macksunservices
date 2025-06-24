@@ -51,14 +51,14 @@ class ClsAzureBlobHelper:
 
     @staticmethod
     def build_blob_path(instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum, target_date: datetime,
-                        file_extension: str) -> str:
+                        file_extension: str, file_type: str) -> str:
         """
         Gera o caminho padronizado para salvar o arquivo no Azure Blob, no formato:
         yyyy/mm/dd/instrument_resolution_yyyy-mm-dd.ext
 
         Exemplo de saída:
-        2025/06/27/poemas_10ms_2025-06-27.zip
+        2025/06/27/poemas_10ms_2025-06-27_CSV.zip
         """
         folder = f"{target_date.year}/{str(target_date.month).zfill(2)}/{str(target_date.day).zfill(2)}"
-        filename = f"{instrument.value.lower()}_{resolution.value}_{target_date.date()}.{file_extension}"
+        filename = f"{instrument.value.lower()}_{resolution.value}_{target_date.date()}_{file_type.lower()}.{file_extension}"
         return f"{folder}/{filename}"

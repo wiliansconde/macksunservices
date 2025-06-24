@@ -1,6 +1,11 @@
-import os
-import numpy as np
 
+import numpy as np
+import json
+from collections import defaultdict
+from datetime import datetime
+from astropy.io import fits
+import csv
+import os
 from config.ClsSettings import ClsSettings
 from repositories.base_repositories.ClsMongoHelper import ClsMongoHelper
 
@@ -100,3 +105,17 @@ class ClsRFandRSFileRepository:
             batch = records[i:i + batch_size]
             res = ClsMongoHelper.insert_vos_to_mongodb(batch, mongo_collection, file_path)
         return res
+
+    def get_records_by_time_range(date_to_generate_file, mongo_collection_name, limit=1000):
+        """
+        Obtém os registros com base no intervalo de tempo fornecido e aplica um limite opcional.
+        """
+        #mongo_collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_DATA_POEMAS_FILE_10ms)
+        records = ClsMongoHelper.find_records_by_time_range(mongo_collection_name, date_to_generate_file, limit)
+
+        if records:
+            print(f"{len(records)} documentos encontrados na coleção {mongo_collection_name}")
+        else:
+            print(f"Nenhum documento encontrado na coleção {mongo_collection_name} para o intervalo de tempo especificado.")
+
+        return records

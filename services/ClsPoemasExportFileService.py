@@ -118,14 +118,22 @@ class ClsPoemasExportFileService:
         col_tbr45 = fits.Column(name='TBR45', format='D', array=[float(rec['TBR45']) for rec in records_to_generate_file])
         col_tbl90 = fits.Column(name='TBL90', format='D', array=[float(rec['TBL90']) for rec in records_to_generate_file])
         col_tbr90 = fits.Column(name='TBR90', format='D', array=[float(rec['TBR90']) for rec in records_to_generate_file])
-        col_hh = fits.Column(name='UTC_TIME_HOUR', format='I', array=[int(rec['UTC_TIME_HOUR']) for rec in records_to_generate_file])
-        col_mm = fits.Column(name='UTC_TIME_MINUTE', format='I', array=[int(rec['UTC_TIME_MINUTE']) for rec in records_to_generate_file])
-        col_sec = fits.Column(name='UTC_TIME_SECOND', format='I', array=[int(rec['UTC_TIME_SECOND']) for rec in records_to_generate_file])
-        col_ms = fits.Column(name='UTC_TIME_MILLISECOND', format='I', array=[int(rec['UTC_TIME_MILLISECOND']) for rec in records_to_generate_file])
+        #col_hh = fits.Column(name='UTC_TIME_HOUR', format='I', array=[int(rec['UTC_TIME_HOUR']) for rec in records_to_generate_file])
+        #col_mm = fits.Column(name='UTC_TIME_MINUTE', format='I', array=[int(rec['UTC_TIME_MINUTE']) for rec in records_to_generate_file])
+        #col_sec = fits.Column(name='UTC_TIME_SECOND', format='I', array=[int(rec['UTC_TIME_SECOND']) for rec in records_to_generate_file])
+        #col_ms = fits.Column(name='UTC_TIME_MILLISECOND', format='I', array=[int(rec['UTC_TIME_MILLISECOND']) for rec in records_to_generate_file])
+        col_iso_datetime = fits.Column(
+            name='ISO_DATETIME',
+            format='A23',
+            array=[
+                rec['UTC_TIME'].strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]  # Cortando para milissegundos
+                for rec in records_to_generate_file
+            ]
+        )
 
         # Criação da tabela principal de dados com documentação adicional para cada coluna
         cols = fits.ColDefs([
-            col_hh, col_mm, col_sec, col_ms, col_tbmax, col_tbmin, col_nfreq, col_ele, col_azi, col_tbl45, col_tbr45,
+            col_iso_datetime, col_tbmax, col_tbmin, col_nfreq, col_ele, col_azi, col_tbl45, col_tbr45,
             col_tbl90, col_tbr90, col_filepath_index
         ])
         data_hdu = fits.BinTableHDU.from_columns(cols, name='DataTable')
@@ -133,6 +141,7 @@ class ClsPoemasExportFileService:
         # Adiciona comentários para cada tabela e suas respectivas colunas
         primary_hdu.header.add_comment("Main Header: General metadata about the observation")
         primary_hdu.header.add_comment(_print_space_fits_doc_file() + "DATE: Observation date in ISO format (YYYY-MM-DD)")
+
         primary_hdu.header.add_comment(_print_space_fits_doc_file() + "YEAR: Year of observation")
         primary_hdu.header.add_comment(_print_space_fits_doc_file() + "MONTH: Month of observation")
         primary_hdu.header.add_comment(_print_space_fits_doc_file() + "DAY: Day of observation")
@@ -147,6 +156,8 @@ class ClsPoemasExportFileService:
         # Documentação da Tabela 1 - Data Table
         primary_hdu.header.add_comment("")
         primary_hdu.header.add_comment("Table: Data Table - Contains detailed observation data records")
+        primary_hdu.header.add_comment(
+        _print_space_fits_doc_file() + "ISO_DATETIME: Date and time in ISO 8601 format with milliseconds (YYYY-MM-DDTHH:MM:SS.sss)")
         primary_hdu.header.add_comment(_print_space_fits_doc_file() + "TBMAX: Maximum brightness temperature (in Kelvin)")
         primary_hdu.header.add_comment(_print_space_fits_doc_file() + "TBMIN: Minimum brightness temperature (in Kelvin)")
         primary_hdu.header.add_comment(_print_space_fits_doc_file() + "NFREQ: Number of observed frequencies")
@@ -157,10 +168,6 @@ class ClsPoemasExportFileService:
         primary_hdu.header.add_comment(_print_space_fits_doc_file() + "TBL90: Left polarization brightness temperature at 90 GHz (Kelvin)")
         primary_hdu.header.add_comment(_print_space_fits_doc_file() + "TBR90: Right polarization brightness temperature at 90 GHz (Kelvin)")
         primary_hdu.header.add_comment(_print_space_fits_doc_file() + "FILEPATH_IDX: References the file source in the FilePath Table")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "UTC_TIME_HOUR: Hour of observation in UTC")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "UTC_TIME_MINUTE: Minute of observation in UTC")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "UTC_TIME_SECOND: Second of observation in UTC")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "UTC_TIME_MILLISECOND: Millisecond of observation in UTC")
 
         # Documentação da Tabela 2 - FilePath Table
         primary_hdu.header.add_comment("")
@@ -192,23 +199,23 @@ class ClsPoemasExportFileService:
         print(f"[EXPORT] Arquivo CSV gerado: {full_file_path}")
         return full_file_path
 
+    import os
+    import csv
+
     @staticmethod
     def _create_csv_file(csv_file_path: str, records_to_generate_file: list):
         """
-        Cria um arquivo CSV a partir de uma lista de registros (JSONs), incluindo um header descritivo como bloco de comentários no topo.
+        Cria um arquivo CSV para o POEMAS, incluindo um bloco de comentários com metadados no topo.
 
-        :param csv_file_path: Caminho completo do arquivo CSV a ser gerado
-        :param records_to_generate_file: Lista de registros
+        :param csv_file_path: Caminho completo do CSV de saída
+        :param records_to_generate_file: Lista de registros (JSONs) a exportar
         """
         if not records_to_generate_file:
             print("[CSV] Nenhum registro disponível para exportação.")
             return
 
         fieldnames = [
-            "UTC_TIME_HOUR",
-            "UTC_TIME_MINUTE",
-            "UTC_TIME_SECOND",
-            "UTC_TIME_MILLISECOND",
+            "ISO_DATETIME",
             "TBMAX",
             "TBMIN",
             "NFREQ",
@@ -217,20 +224,19 @@ class ClsPoemasExportFileService:
             "TBL45",
             "TBR45",
             "TBL90",
-            "TBR90"
+            "TBR90",
+            "FILEPATH_IDX"
         ]
 
         os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
         with open(csv_file_path, mode='w', newline='') as csvfile:
-            # Header técnico como bloco de comentários
+            # Header de metadados como comentários
             csvfile.write("# Metadata Header\n")
             csvfile.write(f"# DATE: {records_to_generate_file[0].get('DATE', '')}\n")
             csvfile.write(f"# YEAR: {records_to_generate_file[0].get('UTC_TIME_YEAR', '')}\n")
             csvfile.write(f"# MONTH: {records_to_generate_file[0].get('UTC_TIME_MONTH', '')}\n")
             csvfile.write(f"# DAY: {records_to_generate_file[0].get('UTC_TIME_DAY', '')}\n")
-            csvfile.write(f"# FREQ1: {records_to_generate_file[0].get('FREQ1', '')}\n")
-            csvfile.write(f"# FREQ2: {records_to_generate_file[0].get('FREQ2', '')}\n")
             csvfile.write("# TELESCOP: POlarization Emission of Millimeter Activity at the Sun (POEMAS)\n")
             csvfile.write("# INSTRUME: POlarization Emission of Millimeter Activity at the Sun (POEMAS)\n")
             csvfile.write("# OBSRVTRY: Complejo Astronomico El Leoncito (CASLEO)\n")
@@ -244,11 +250,14 @@ class ClsPoemasExportFileService:
             writer.writeheader()
 
             for record in records_to_generate_file:
+                iso_datetime_str = (
+                    record["UTC_TIME"].strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
+                    if "UTC_TIME" in record and record["UTC_TIME"] is not None
+                    else ""
+                )
+
                 writer.writerow({
-                    "UTC_TIME_HOUR": int(record.get("UTC_TIME_HOUR", 0)),
-                    "UTC_TIME_MINUTE": int(record.get("UTC_TIME_MINUTE", 0)),
-                    "UTC_TIME_SECOND": int(record.get("UTC_TIME_SECOND", 0)),
-                    "UTC_TIME_MILLISECOND": int(record.get("UTC_TIME_MILLISECOND", 0)),
+                    "ISO_DATETIME": iso_datetime_str,
                     "TBMAX": float(record.get("TBMAX", 0.0)),
                     "TBMIN": float(record.get("TBMIN", 0.0)),
                     "NFREQ": int(record.get("NFREQ", 0)),
@@ -257,7 +266,8 @@ class ClsPoemasExportFileService:
                     "TBL45": float(record.get("TBL45", 0.0)),
                     "TBR45": float(record.get("TBR45", 0.0)),
                     "TBL90": float(record.get("TBL90", 0.0)),
-                    "TBR90": float(record.get("TBR90", 0.0))
+                    "TBR90": float(record.get("TBR90", 0.0)),
+                    "FILEPATH_IDX": int(record.get("FILEPATH_IDX", 0))
                 })
 
         print(f"[CSV] CSV file created with header metadata: {csv_file_path}")

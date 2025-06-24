@@ -1,7 +1,7 @@
 import time
 from datetime import datetime
 from typing import List
-from pymongo import errors
+from pymongo import errors, ASCENDING
 from pymongo.errors import PyMongoError
 
 from config.ClsSettings import ClsSettings
@@ -67,7 +67,7 @@ class ClsMongoHelper:
         collection = ClsMongoHelper.get_data_collection(mongo_collection_name)
 
         start = time.time()
-        records = list(collection.find(query).sort("_id"))  # .limit(limit)
+        records = list(collection.find(query).sort("UTC_TIME", ASCENDING))  # .limit(limit)
         duration = time.time() - start
 
         print(f"[QUERY] {len(records)} documentos encontrados em {duration:.2f} segundos.")
