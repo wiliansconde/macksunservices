@@ -79,14 +79,78 @@ class ClsRFandRSFileService:
 
         print(f"[INFO] Exportação finalizada: {output_txt_path}")
 
+    import numpy as np
+    import os
+
+    import numpy as np
+    import pandas as pd
+    import os
+
+    def read_and_validate_rf_rs_file(file_path: str, output_preview: bool = True, output_csv: bool = True):
+        # Define o dtype conforme seu backup original
+        dtype = np.dtype([
+            ('TIME', np.int32),
+            ('ADCVAL_1', np.uint16),
+            ('ADCVAL_2', np.uint16),
+            ('ADCVAL_3', np.uint16),
+            ('ADCVAL_4', np.uint16),
+            ('ADCVAL_5', np.uint16),
+            ('ADCVAL_6', np.uint16),
+            ('POS_TIME', np.int32),
+            ('AZIPOS', np.int32),
+            ('ELEPOS', np.int32),
+            ('PM_DAZ', np.int16),
+            ('PM_DEL', np.int16),
+            ('AZIERR', np.int32),
+            ('ELEERR', np.int32),
+            ('X_OFF', np.int16),
+            ('Y_OFF', np.int16),
+            ('OFF_1', np.int16),
+            ('OFF_2', np.int16),
+            ('OFF_3', np.int16),
+            ('OFF_4', np.int16),
+            ('OFF_5', np.int16),
+            ('OFF_6', np.int16),
+            ('TARGET', np.int8),
+            ('OPMODE', np.int8),
+            ('GPS_STATUS', np.int16),
+            ('RECNUM', np.int32),
+        ])
+
+        record_size = 64  # Tamanho fixo do registro
+
+        # Verificar tamanho do arquivo
+        file_size = os.path.getsize(file_path)
+        num_records = file_size // record_size
+        print(f"Tamanho do arquivo: {file_size} bytes")
+        print(f"Registros esperados (baseado em 64 bytes por registro): {num_records}")
+
+        # Leitura com numpy
+        data = np.fromfile(file_path, dtype=dtype, count=num_records)
+
+        # Converter para DataFrame para validar visualmente
+        df = pd.DataFrame(data)
+
+        # Preview
+        if output_preview:
+            print("\n=== Preview dos primeiros registros ===\n")
+            print(df.head(10))
+
+        # Salvar como CSV se desejar
+        if output_csv:
+            output_file = file_path + "_preview.csv"
+            df.to_csv(output_file, index=False)
+            print(f"\nArquivo CSV de preview gerado: {output_file}")
+
+        return df
+
     @staticmethod
     def process_file(file_path) -> int:
         #service = ClsRFandRSFileService(file_path)
         #service.process_records()
         #service.insert_records_to_mongodb()
-
         #ClsRFandRSFileService.debug_read_sst_file(file_path)
-        ClsRFandRSFileService.export_sst_fast_file_one_line_per_record(file_path)
+        #ClsRFandRSFileService.read_and_validate_rf_rs_file(file_path)
 
         service = ClsRFandRSFileService(file_path)
         service.process_records()

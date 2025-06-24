@@ -41,11 +41,12 @@ class ClsFileIngestionQueueRepository:
             print('ARQUIVO PROC: ' + file_path)
             print("")
             try:
-                collection_name = ClsSettings.get_mongo_collection_name_by_file_type(file_path)
-                collection.update_one(
-                    {'_id': next_file['_id']},
-                    {'$set': {'COLLECTION_NAME': collection_name}}
-                )
+
+                collection_name=""
+                #collection.update_one(
+                #    {'_id': next_file['_id']},
+                #    {'$set': {'COLLECTION_NAME': collection_name}}
+                #)
                 next_file['COLLECTION_NAME'] = collection_name
             except ValueError as e:
                 print(f"Error determining collection name: {str(e)}")

@@ -26,7 +26,7 @@ class zzzzClsPoemasFileService:
 
     def insert_records_to_mongodb(self) -> str:
         batch_size = ClsSettings.MONGO_BATCH_SIZE_TO_INSERT  # Tamanho do lote para inserções em massa
-        mongo_collection = ClsSettings.get_mongo_collection_name_by_file_type(self.file_path)
+        mongo_collection = ""#ClsSettings.get_mongo_collection_name_by_file_type(self.file_path)
 
         for i in range(0, len(self.records), batch_size):
             batch = self.records[i:i + batch_size]

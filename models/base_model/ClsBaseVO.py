@@ -53,5 +53,5 @@ class ClsBaseVO:
             elif isinstance(value, datetime):
                 # Garante que UTC_TIME permanece como um objeto datetime
                 dict_representation[key] = value
-        print('------>> convert to_dict: ' + str(dict_representation["UTC_TIME"]))
+        #print('------>> convert to_dict: ' + str(dict_representation["UTC_TIME"]))
         return dict_representation
