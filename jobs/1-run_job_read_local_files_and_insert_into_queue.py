@@ -13,7 +13,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 *******************  RODE ESSE ANTES DO PROCESS_QUEUE ****************************
 **********************************************************************************
 
-Job: run_job_read_local_files_and_insert_into_queue.py
+Job: 1-run_job_read_local_files_and_insert_into_queue.py
+
 
 Descrição:
     Varre recursivamente um diretório, identifica arquivos válidos (bi/rs/rf/*.trk),
@@ -29,11 +30,28 @@ Uso manual:
        cd C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Craam_Loader
 
     2. Execute com:
-       python -m jobs.run_job_read_local_files_and_insert_into_queue "C:/Y/WConde/Estudo/DoutoradoMack/Disciplinas/_PesquisaFinal/Dados/_FINAL/POEMAS/_Carga_teste/wilians-daniel/2012/M07/D09"
+       POEMAS
+       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2020\M11\D03"
+       
+       FAST
+       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\2002\M02\D18\fast"
 
+       INTG
+       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\2002\M02\D18\intg"
+
+       BI FILES
+       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\2002\M02\D18\instr"
+
+    Main.read_local_files_and_insert_into_queue(
+        r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\2002\M02\D18\')
+
+       
+       
+       
+       
 Uso em cron (dentro de container):
-    */30 * * * * root python /app/run_job_read_local_files_and_insert_into_queue.py "C:/w/y/POEMAS" >> /var/log/cron.log 2>&1
-    */30 * * * * root python /app/run_job_read_local_files_and_insert_into_queue.py "C:/w/y/SST" >> /var/log/cron.log 2>&1
+    */30 * * * * root python /app/1-run_job_read_local_files_and_insert_into_queue.py "C:/w/y/POEMAS" >> /var/log/cron.log 2>&1
+    */30 * * * * root python /app/1-run_job_read_local_files_and_insert_into_queue.py "C:/w/y/SST" >> /var/log/cron.log 2>&1
 
 Critérios de arquivo válido:
     - Começa com: bi, rs ou rf
@@ -83,7 +101,7 @@ class run_job_read_local_files_and_insert_into_queue:
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Uso: python run_job_read_local_files_and_insert_into_queue.py <diretório>")
+        print("Uso: python 1-run_job_read_local_files_and_insert_into_queue.py <diretório>")
         sys.exit(1)
 
     directory = sys.argv[1]

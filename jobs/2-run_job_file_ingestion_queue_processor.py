@@ -2,7 +2,7 @@ import sys
 import traceback
 from datetime import datetime
 from controllers.queue.ClsFileQueueController import ClsFileQueueController
-from controllers.queue.ClsGenerateFileQueueController import ClsGenerateFileQueueController
+from controllers.queue.ClsGenerateFileToExportQueueController import ClsGenerateFileToExportQueueController
 
 """
 Job: run_job_process_queue.py
@@ -15,13 +15,14 @@ Recomendação de uso:
     ➤ Esse job deve ser executado após a fila ser preenchida por outro processo.
     ➤ Ideal para agendamentos periódicos em containers ou servidores.
 
+
 Uso manual:
     No command DOS:
     1. Navegue até a raiz do projeto:
        cd C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Craam_Loader
 
     2. Execute com:
-       python -m jobs.run_job_process_queue
+       python -m jobs.2-run_job_file_ingestion_queue_processor
 
 Uso em cron (dentro de container):
     */30 * * * * root python /app/run_job_process_queue.py >> /var/log/cron.log 2>&1
@@ -49,7 +50,7 @@ class run_job_file_ingestion_queue_processor:
                 ClsFileQueueController.process_next_file()
 
             print(f"[{datetime.now()}] [Processor] Atualizando fila de geração de arquivos (Generate File Queue)...")
-            ClsGenerateFileQueueController.populate_queue_from_stats()
+            ClsGenerateFileToExportQueueController.populate_queue_from_stats()
 
             print(f"[{datetime.now()}] [Processor] Processamento concluído.")
 

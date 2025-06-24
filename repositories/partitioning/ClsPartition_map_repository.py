@@ -10,8 +10,17 @@ from datetime import datetime
 
 class ClsPartitionMapRepository:
 
-    @staticmethod
-    def find_partitions(instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum, start_date: datetime, end_date: datetime) -> List[ClsPartitionMapModel]:
+    def find_partitions(self, instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum, start_date: datetime,
+                        end_date: datetime) -> List[ClsPartitionMapModel]:
+        """
+        Retorna uma lista de Partitions que abrangem o intervalo informado.
+
+        :param instrument: Instrumento (enum)
+        :param resolution: Resolução (enum)
+        :param start_date: Data inicial
+        :param end_date: Data final
+        :return: Lista de ClsPartitionMapModel (pode ser vazia)
+        """
         collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_PARTITION_MAP)
 
         query = {
@@ -21,17 +30,30 @@ class ClsPartitionMapRepository:
             "end_date": {"$gte": start_date}
         }
 
-        documents = collection.find(query)
-        return [ClsPartitionMapModel.from_document(doc) for doc in documents]
+        try:
+            documents = collection.find(query)
+            partitions = []
+
+            for doc in documents:
+                try:
+                    partitions.append(ClsPartitionMapModel.from_document(doc))
+                except Exception as parse_error:
+                    print(f"[PartitionMap] Erro ao parsear documento {doc.get('_id', 'sem_id')}: {parse_error}")
+
+            return partitions
+
+        except Exception as db_error:
+            print(f"[PartitionMap] Erro ao consultar partition map: {db_error}")
+            return []
 
     @staticmethod
     def insert_partition(partition: ClsPartitionMapModel):
         collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_PARTITION_MAP)
         collection.insert_one(partition.to_document())
 
-    @staticmethod
-    def check_overlap(instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum, start_date: datetime, end_date: datetime) -> bool:
-        partitions = ClsPartitionMapRepository.find_partitions(instrument, resolution, start_date, end_date)
+
+    def check_overlap(self, instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum, start_date: datetime, end_date: datetime) -> bool:
+        partitions = ClsPartitionMapRepository.find_partitions(self, instrument, resolution, start_date, end_date)
         return len(partitions) > 0
 
     @staticmethod

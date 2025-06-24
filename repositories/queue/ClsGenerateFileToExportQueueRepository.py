@@ -7,7 +7,7 @@ from repositories.base_repositories.ClsMongoHelper import ClsMongoHelper
 from bson.objectid import ObjectId
 
 
-class ClsGenerateFileQueueRepository:
+class ClsGenerateFileToExportQueueRepository:
 
     @staticmethod
     def get_all_stats():

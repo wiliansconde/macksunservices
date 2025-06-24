@@ -10,6 +10,41 @@ class ClsRFandRSFileRepository:
     def get_dtype(prefix: str) -> np.dtype:
         if prefix in ["rf", "rs"]:
             return np.dtype([
+                ('TIME', '<i4'),
+                ('ADCVAL_1', '<u2'),
+                ('ADCVAL_2', '<u2'),
+                ('ADCVAL_3', '<u2'),
+                ('ADCVAL_4', '<u2'),
+                ('ADCVAL_5', '<u2'),
+                ('ADCVAL_6', '<u2'),
+                ('POS_TIME', '<i4'),
+                ('AZIPOS', '<i4'),
+                ('ELEPOS', '<i4'),
+                ('PM_DAZ', '<i2'),
+                ('PM_DEL', '<i2'),
+                ('AZIERR', '<i4'),
+                ('ELEERR', '<i4'),
+                ('X_OFF', '<i2'),
+                ('Y_OFF', '<i2'),
+                ('OFF_1', '<i2'),
+                ('OFF_2', '<i2'),
+                ('OFF_3', '<i2'),
+                ('OFF_4', '<i2'),
+                ('OFF_5', '<i2'),
+                ('OFF_6', '<i2'),
+                ('TARGET', 'i1'),
+                ('OPMODE', 'i1'),
+                ('GPS_STATUS', '<i2'),
+                ('RECNUM', '<i4')
+            ], align=False)
+
+
+        else:
+            raise ValueError("Prefixo desconhecido")
+
+    def zz_old_get_dtype(prefix: str) -> np.dtype:
+        if prefix in ["rf", "rs"]:
+            return np.dtype([
                 ('TIME', np.int32),
                 ('ADCVAL_1', np.uint16),
                 ('ADCVAL_2', np.uint16),
@@ -55,9 +90,11 @@ class ClsRFandRSFileRepository:
         return np.fromfile(file_path, dtype=dtype, count=num_records)
 
     @staticmethod
-    def insert_records(records, file_path):
+    def insert_records(records, file_path,mongo_collection):
         batch_size = ClsSettings.MONGO_BATCH_SIZE_TO_INSERT
-        mongo_collection = ClsSettings.get_mongo_collection_name_by_file_type(file_path)
+        #mongo_collection = ClsSettings.get_mongo_collection_name_by_file_type(file_path)
+
+
         res = None
         for i in range(0, len(records), batch_size):
             batch = records[i:i + batch_size]

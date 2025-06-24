@@ -3,10 +3,11 @@ import traceback
 import os
 from datetime import datetime
 from controllers.partitioning.ClsPartition_map_controller import ClsPartitionMapController
-from controllers.queue.ClsGenerateFileQueueController import ClsGenerateFileQueueController
+from controllers.queue.ClsGenerateFileToExportQueueController import ClsGenerateFileToExportQueueController
 from enums.ClsInstrumentEnum import ClsInstrumentEnum
 from enums.ClsResolutionEnum import ClsResolutionEnum
 from repositories.base_repositories.ClsAzureBlobHelper import ClsAzureBlobHelper
+from repositories.export_to_cloud.ClsFileExportRegistryToCloudRepository import ClsFileExportRegistryToCloudRepository
 from repositories.poemas.ClsPoemasFileRepository import ClsPoemasFileRepository
 from services.ClsPoemasExportFileService import ClsPoemasExportFileService
 from utils.ZipHelper import ZipHelper
@@ -15,6 +16,7 @@ from datetime import datetime
 
 
 class run_job_generate_file_export:
+
 
 
     @staticmethod
@@ -28,7 +30,7 @@ class run_job_generate_file_export:
         print(f"[{datetime.now()}] [ExportJob] Iniciando geração de arquivos exportados a partir da fila...")
 
         while True:
-            request = ClsGenerateFileQueueController.get_next_pending_request()
+            request = ClsGenerateFileToExportQueueController.get_next_pending_request()
             if not request:
                 print(f"[{datetime.now()}] [ExportJob] Nenhuma requisição pendente. Encerrando job.")
                 break
@@ -58,7 +60,7 @@ class run_job_generate_file_export:
                     if not records_to_generate_files:
                         print(
                             f"[ExportJob] Nenhum dado encontrado para {target_date.date()} na coleção {mongo_collection}.")
-                        ClsGenerateFileQueueController.update_status_failed(request_id, "No records found for export.")
+                        ClsGenerateFileToExportQueueController.update_status_failed(request_id, "No records found for export.")
                         continue
 
                     # Gera os arquivos
@@ -76,24 +78,45 @@ class run_job_generate_file_export:
 
 
                     # Upload para o Azure
-                    ClsAzureBlobHelper.upload_file_to_blob(container_name, blob_path, zip_fits_file_path)
-                    ClsAzureBlobHelper.upload_file_to_blob(container_name, blob_path, zip_csv_file_path)
+                    fits_public_url=ClsAzureBlobHelper.upload_file_to_blob(container_name, blob_path, zip_fits_file_path)
+                    csv_public_url=ClsAzureBlobHelper.upload_file_to_blob(container_name, blob_path, zip_csv_file_path)
+
+                    ClsFileExportRegistryToCloudRepository.insert_export_record({
+                        "instrument": instrument_str,
+                        "resolution": resolution_str,
+                        "date": target_date,
+                        "format": "fits",
+                        "container_name": container_name,
+                        "blob_path": blob_path,
+                        "public_url": fits_public_url
+                    })
+
+                    ClsFileExportRegistryToCloudRepository.insert_export_record({
+                        "instrument": instrument_str,
+                        "resolution": resolution_str,
+                        "date": target_date,
+                        "format": "csv",
+                        "container_name": container_name,
+                        "blob_path": blob_path,
+                        "public_url": csv_public_url
+                    })
+
 
                     # Limpeza
                     os.remove(fits_file_path)
                     os.remove(csv_file_path)
                     #os.remove(zip_file_path)
 
-                    ClsGenerateFileQueueController.update_status_completed(request_id)
+                    ClsGenerateFileToExportQueueController.update_status_completed(request_id)
 
                 else:
                     print(f"[ExportJob] Instrumento {instrument_str} ainda não suportado para exportação.")
-                    ClsGenerateFileQueueController.update_status_failed(request_id, f"Instrument {instrument_str} not supported.")
+                    ClsGenerateFileToExportQueueController.update_status_failed(request_id, f"Instrument {instrument_str} not supported.")
 
             except Exception as e:
                 print(f"[ExportJob] Erro ao processar exportação: {str(e)}")
                 traceback.print_exc()
-                ClsGenerateFileQueueController.update_status_failed(request_id, str(e))
+                ClsGenerateFileToExportQueueController.update_status_failed(request_id, str(e))
 
 if __name__ == "__main__":
     run_job_generate_file_export.run()

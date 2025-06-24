@@ -10,19 +10,30 @@ class ClsDataPartitionResolverService:
     def __init__(self):
         self.repository = ClsPartitionMapRepository()
 
-    def get_target_collection(self, instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum, timestamp: datetime) -> str:
-        partitions = self.repository.find_partitions(instrument, resolution, timestamp, timestamp)
-        if partitions:
-            return partitions[0].collection_name
-        else:
-            collection_name = self._generate_collection_name(instrument, resolution, timestamp)
+    def get_target_collection(self, instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum,
+                              timestamp: datetime) -> str:
+        try:
             start_date, end_date = self._get_date_range(timestamp, resolution)
+            partitions = self.repository.find_partitions(instrument, resolution,  start_date, end_date)
+
+            if partitions and len(partitions) > 0:
+                collection_name = partitions[0].collection_name
+                print(f"[Partitioning] Collection encontrada: {collection_name}")
+                return collection_name
+
+            print("[Partitioning] Nenhuma collection existente encontrada. Iniciando processo de criação...")
+
+            # Define nome da nova collection e seu range
+            collection_name = self._generate_collection_name(instrument, resolution, timestamp)
+            #start_date, end_date = self._get_date_range(timestamp, resolution)
 
             # Verifica sobreposição
             if self.repository.check_overlap(instrument, resolution, start_date, end_date):
-                raise Exception(f"Overlapping partition detected for {instrument} {resolution} {start_date} - {end_date}")
+                error_msg = f"[Partitioning] Overlapping partition detected for {instrument.value} {resolution.value} {start_date} - {end_date}."
+                print(error_msg)
+                raise Exception(error_msg)
 
-            # Cria novo registro no mapa
+            # Cria nova entrada no mapa de partições
             new_partition = ClsPartitionMapModel(
                 instrument=instrument.value,
                 resolution=resolution.value,
@@ -34,12 +45,20 @@ class ClsDataPartitionResolverService:
                 created_at=datetime.utcnow(),
                 updated_at=datetime.utcnow()
             )
-            self.repository.insert_partition(new_partition)
 
-            # Garante a criação física da collection como Time Series
-            self.repository.create_time_series_collection_if_not_exists(collection_name, resolution)
+            try:
+                self.repository.insert_partition(new_partition)
+                self.repository.create_time_series_collection_if_not_exists(collection_name, resolution)
+                print(f"[Partitioning] Nova collection criada com sucesso: {collection_name}")
+            except Exception as insert_error:
+                print(f"[Partitioning] Erro ao criar nova partition ou collection: {insert_error}")
+                raise insert_error
 
             return collection_name
+
+        except Exception as e:
+            print(f"[Partitioning] Erro ao resolver target collection: {e}")
+            raise e
 
     def get_collections_for_date_range(self, instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum, start_date: datetime, end_date: datetime) -> list:
         partitions = self.repository.find_partitions(instrument, resolution, start_date, end_date)

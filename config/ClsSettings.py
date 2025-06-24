@@ -60,7 +60,7 @@ class ClsSettings:
      MONGO_COLLECTION_PARTITION_MAP = 'partition_map'
      MONGO_COLLECTION_DATA_AVAILABILITY_STATS='data_availability_stats'
      MONGO_COLLECTION_GENERATE_FILE_QUEUE = "generate_file_to_export_queue"
-
+     MONGO_COLLECTION_FILE_EXPORT_REGISTRY_TO_CLOUD='file_export_registry_to_cloud'
      #
     # # Configurações do MongoDB AZURE (Cosmos DB via URI completa)
     # MONGO_HOST = "mongosrv.mongocluster.cosmos.azure.com"

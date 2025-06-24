@@ -79,7 +79,6 @@ class ClsMongoHelper:
         db = client[ClsConnection.get_mongo_data_db_name()]
         collection = db[collection_name]
 
-        # Converter lista de VOs para uma lista de dicionários
         records = [vo.to_dict() for vo in vos]
 
         inserted_count = 0
