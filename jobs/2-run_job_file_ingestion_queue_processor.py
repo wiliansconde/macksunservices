@@ -45,12 +45,8 @@ class run_job_file_ingestion_queue_processor:
             print(f"[{datetime.now()}] [Processor] Iniciando processamento de {total} arquivos na fila...")
 
             for i in range(total):
-
                 print(f"[Processor] {i+1}/{total} processando...")
                 ClsFileQueueController.process_next_file()
-
-            print(f"[{datetime.now()}] [Processor] Atualizando fila de geração de arquivos (Generate File Queue)...")
-            ClsGenerateFileToExportQueueController.populate_queue_from_stats()
 
             print(f"[{datetime.now()}] [Processor] Processamento concluído.")
 

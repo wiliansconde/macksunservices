@@ -15,6 +15,41 @@ from services.ClsPoemasExportFileService import ClsPoemasExportFileService
 from services.ClsRFandRSExportFileService import ClsRFandRSExportFileService
 from utils.ZipHelper import ZipHelper
 
+"""
+Job: run_job_generate_file_export.py
+
+Descrição:
+    Processa requisições da fila 'queue_generate_file_to_export_to_cloud', gerando arquivos FITS e CSV a partir
+    dos dados científicos exportáveis, compactando, realizando upload para o Azure Blob Storage e registrando os
+    metadados do processo na coleção 'exported_files_to_cloud'.
+
+Recomendação de uso:
+    ➤ Esse job deve ser executado de forma periódica para garantir o fluxo contínuo de exportação e publicação de dados.
+    ➤ Pode ser executado manualmente ou via agendamento com cron, preferencialmente após o preenchimento da fila.
+
+Instrumentos suportados:
+    - POEMAS
+    - SST (modos FAST/INTG)
+
+Uso manual:
+    No command line:
+    1. Navegue até a raiz do projeto:
+       cd C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Craam_Loader
+
+    2. Execute com:
+       python -m jobs.run_job_generate_file_export
+
+Uso em cron (dentro de container):
+    */30 * * * * root python /app/jobs/run_job_generate_file_export.py >> /var/log/cron.log 2>&1
+
+Saída:
+    Log detalhado indicando a geração de arquivos, caminhos de destino, URLs públicas e status final de cada requisição.
+
+Requisitos:
+    - Python 3.7+
+    - Executar a partir da raiz do projeto com `-m`
+    - Dependências: ClsGenerateFileToExportQueueController, ClsPartitionMapController, ClsAzureBlobHelper, repositórios e serviços de exportação
+"""
 
 class run_job_generate_file_export:
 

@@ -10,19 +10,34 @@ from controllers.export_to_cloud.ClsFileExportRegistryToCloudController import C
 Job: run_job_sync_exported_files_to_cloud.py
 
 Descrição:
-    Sincroniza registros da coleção 'exported_files_to_cloud' do MongoDB local para o MongoDB na nuvem (Azure Cosmos).
-    Apenas documentos com {"cloud_synchronized": False} são considerados para envio.
+    Sincroniza de forma incremental os registros da coleção 'exported_files_to_cloud' do ambiente local
+    para o ambiente de nuvem (Cosmos DB). O processo verifica o campo 'cloud_synchronized' para evitar
+    duplicações e permite, opcionalmente, forçar o reenvio de todos os registros.
 
 Recomendação de uso:
-    ➤ Executar periodicamente via cron ou manualmente em ambiente controlado.
-    ➤ Ideal para manter consistência entre os dois ambientes.
+    ➤ Esse job deve ser executado regularmente para manter a base de dados da nuvem alinhada com os dados exportados localmente.
+    ➤ Ideal para agendamento automático ou execução manual em casos de reprocessamento.
 
 Uso manual:
-    python -m jobs.run_job_sync_exported_files_to_cloud
+    No command DOS:
+    1. Navegue até a raiz do projeto:
+       cd C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Craam_Loader
 
-Agendamento via cron:
-    */30 * * * * root python /app/run_job_sync_exported_files_to_cloud.py >> /var/log/cron.log 2>&1
+    2. Execute com:
+       python -m jobs.run_job_sync_exported_files_to_cloud
+
+Uso em cron (dentro de container):
+    */30 * * * * root python /app/jobs/run_job_sync_exported_files_to_cloud.py >> /var/log/cron.log 2>&1
+
+Saída:
+    Log detalhado com timestamp, IDs dos registros sincronizados e mensagens de erro, se ocorrerem.
+
+Requisitos:
+    - Python 3.7+
+    - Executar a partir da raiz do projeto com `-m`
+    - ClsFileExportRegistryToCloudController acessível em controllers.export_to_cloud
 """
+
 
 class run_job_sync_exported_files_to_cloud:
 
