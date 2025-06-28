@@ -13,6 +13,12 @@ class ClsSettings:
      MONGO_PASSWORD = os.getenv('MONGO_PASSWORD', '')
      MONGO_BATCH_SIZE_TO_INSERT = 100000
 
+     # ===== MongoDB Azure (consumo via portal) =====
+     MONGO_AZURE_HOST = os.getenv('MONGO_AZURE_HOST', 'mongosrv.mongocluster.cosmos.azure.com')
+     MONGO_AZURE_DB = os.getenv('MONGO_AZURE_DB', 'macksundb')
+     MONGO_AZURE_USER = os.getenv('MONGO_AZURE_USER', 'usrmongosrv')
+     MONGO_AZURE_PASSWORD = os.getenv('MONGO_AZURE_PASSWORD', 'Teste.100')
+
      AZURE_BLOB_CONNECTION_STRING = os.getenv(
          'AZURE_BLOB_CONNECTION_STRING',
          'DefaultEndpointsProtocol=https;AccountName=arm2macksun;AccountKey=LIMQNROm7U2ZXiWRs/cCWdeRwhXf0BO4XkPO6eWwBk02SS8CXqPrD04zsOes3vFtrQqjAof3W5gH+AStxMBJOg==;EndpointSuffix=core.windows.net'
@@ -22,19 +28,6 @@ class ClsSettings:
          'AZURE_BLOB_BASE_URL',
          'https://arm2macksun.blob.core.windows.net'
      )
-
-     # # Configurações do MongoDB ** AZURE **
-     """MONGO_HOST = os.getenv('MONGO_HOST', 'mongosrv.mongocluster.cosmos.azure.com')
-     MONGO_PORT = int(os.getenv('MONGO_PORT', 27017))
-
-     MONGO_DB_NAME = os.getenv('MONGO_DB_NAME', 'macksundb')
-     MONGO_USER = os.getenv('MONGO_USER', 'usrmongosrv')
-     MONGO_PASSWORD = os.getenv('MONGO_PASSWORD', 'Teste.100')
-
-     MONGO_TLS = True
-     MONGO_AUTH_MECHANISM = 'SCRAM-SHA-256'
-     MONGO_BATCH_SIZE_TO_INSERT = 1500
-     """
 
 
      @staticmethod
@@ -49,6 +42,15 @@ class ClsSettings:
              return f"mongodb://{ClsSettings.MONGO_USER}:{ClsSettings.MONGO_PASSWORD}@{ClsSettings.MONGO_HOST}:{ClsSettings.MONGO_PORT}/{ClsSettings.MONGO_DB_PORTAL}"
          return f"mongodb://{ClsSettings.MONGO_HOST}:{ClsSettings.MONGO_PORT}/{ClsSettings.MONGO_DB_PORTAL}"
 
+
+
+     @staticmethod
+     def get_mongo_azure_uri():
+         return (
+             f"mongodb+srv://{ClsSettings.MONGO_AZURE_USER}:{ClsSettings.MONGO_AZURE_PASSWORD}"
+             f"@{ClsSettings.MONGO_AZURE_HOST}/{ClsSettings.MONGO_AZURE_DB}"
+             "?tls=true&authMechanism=SCRAM-SHA-256&retrywrites=false&maxIdleTimeMS=120000"
+         )
 
     # # Mongo Collections
      MONGO_COLLECTION_FILE_INGESTION_QUEUE = 'queue_file_ingestion'

@@ -25,6 +25,13 @@ class ClsMongoHelper:
         return db[collection_name]
 
     @staticmethod
+    def get_azure_portal_collection(collection_name):
+        client = ClsConnection.get_mongo_cloud_client() # ClsConnection.get_mongo_portal_client()
+        db_name = ClsConnection.get_mongo_portal_db_name()
+        db = client[db_name]
+        return db[collection_name]
+
+    @staticmethod
     def get_mongo_client():
         return ClsConnection.get_mongo_data_client()
 
