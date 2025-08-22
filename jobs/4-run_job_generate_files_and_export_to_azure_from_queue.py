@@ -37,7 +37,7 @@ Uso manual:
        cd C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Craam_Loader
 
     2. Execute com:
-       python -m jobs.run_job_generate_file_export
+       python -m 4-run_job_generate_files_and_export_to_azure_from_queue
 
 Uso em cron (dentro de container):
     */30 * * * * root python /app/jobs/run_job_generate_file_export.py >> /var/log/cron.log 2>&1
