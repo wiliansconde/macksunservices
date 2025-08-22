@@ -153,16 +153,23 @@ class ClsRFandRSFileService:
         #ClsRFandRSFileService.read_and_validate_rf_rs_file(file_path)
 
         service = ClsRFandRSFileService(file_path)
-        service.process_records()
-        file_timestamp = service.records[0].UTC_TIME.date() #datetime.strptime(service.records[0].UTC_TIME, "%Y-%m-%d")
         instrument = ClsInstrumentEnum.SST
         resolution = ClsResolutionEnum.Milliseconds_05
         file_name = os.path.basename(file_path)
         prefix_file = file_name[:2]
+        sst_type=""
         if prefix_file == "rf":
             resolution = ClsResolutionEnum.Milliseconds_05
+            sst_type="FAST"
         elif prefix_file == "rs":
             resolution = ClsResolutionEnum.Milliseconds_40
+            sst_type="INTG"
+
+        service.process_records(sst_type)
+
+        file_timestamp = service.records[
+            0].UTC_TIME.date()  # datetime.strptime(service.records[0].UTC_TIME, "%Y-%m-%d")
+
         # elif prefix == "bi":
         #    resolution = ClsResolutionEnum.Seconds_01
 
@@ -174,7 +181,7 @@ class ClsRFandRSFileService:
         ClsDataAvailabilityStatsService.recalculate_for_day(instrument, resolution, file_timestamp, mongo_collection)
 
         return len(service.records)
-    def process_records(self) -> None:
+    def process_records(self, sst_type) -> None:
         records = ClsRFandRSFileRepository.read_records(self.file_path, self.dtype)
         df = pd.DataFrame(records)
 
@@ -182,7 +189,7 @@ class ClsRFandRSFileService:
         #    print(row.get('TIME', '[Sem UTC_TIME]'))
 
         self.records = df.apply(
-            lambda row: ClsSSTFileFormat.format_rs_rf_file_record(ClsRFandRSFileVO(self.file_path, row.to_dict())), axis=1
+            lambda row: ClsSSTFileFormat.format_rs_rf_file_record(ClsRFandRSFileVO(self.file_path, row.to_dict()), sst_type), axis=1
         )
 
     def insert_records_to_mongodb(self, timestamp, instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum, mongo_collection) -> str:

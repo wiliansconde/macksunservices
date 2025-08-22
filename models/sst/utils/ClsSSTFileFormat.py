@@ -298,7 +298,8 @@ class ClsSSTFileFormat:
         utc_datetime = datetime(1970, 1, 1, tzinfo=datetime.timezone.utc) + datetime.timedelta(seconds=time_value)
         return utc_datetime
 
-    def format_rs_rf_file_record(record: ClsRFandRSFileVO) -> ClsRFandRSFileVO:
+    def format_rs_rf_file_record(record: ClsRFandRSFileVO, sst_type:str) -> ClsRFandRSFileVO:
+        record.SSTType=sst_type
         # Formata os valores dos atributos arredondando-os
         if record.ADCVAL_1 > 0:
             record.ADCVAL_1 = round(record.ADCVAL_1, 2)

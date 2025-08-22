@@ -70,44 +70,51 @@ class ClsPoemasExportFileService:
         header = fits.Header()
         header.add_blank()
         header.add_comment("")
-        #header.add_comment("AAAAa")
 
-        #header.add_comment("BBBBB")
-
-        header['DATE'] = str(records_to_generate_file[0]['DATE'])
-        header['YEAR'] = int(records_to_generate_file[0]['UTC_TIME_YEAR'])
-        header['MONTH'] = int(records_to_generate_file[0]['UTC_TIME_MONTH'])
-        header['DAY'] = int(records_to_generate_file[0]['UTC_TIME_DAY'])
-        header['FREQ1'] = str(records_to_generate_file[0]['FREQ1'])
-        header['FREQ2'] = str(records_to_generate_file[0]['FREQ2'])
+        header['FILENAME'] = os.path.basename(fits_file_path)
+        header['ORIGIN'] = "CRAAM/Universidade Presbiteriana Mackenzie"
         header['TELESCOP'] = "POlarization Emission of Millimeter Activity at the Sun (POEMAS)"
         header['INSTRUME'] = "POlarization Emission of Millimeter Activity at the Sun (POEMAS)"
-        header['OBSRVTRY'] = "Complejo Astronomico El Leoncito (CASLEO)"
-        header['OBS_ALTI'] = "2552 m"
-        header['OBS_LONG'] = "-69.295583"
-        header['OBS_LATI'] = "-31.798527"
-        header['FILENAME'] = os.path.basename(fits_file_path)
+
+        header['OBSERVAT'] = "CASLEO"
+        header['STATION'] = "Lat = -31.79852700, Lon = -69.29558300, Height = 2.552 km"
+        header['TZ'] = "GMT-3"
+
+        first_time = records_to_generate_file[0]['UTC_TIME']
+        last_time = records_to_generate_file[-1]['UTC_TIME']
+
+        _isodate_ = first_time.strftime('%Y-%m-%d')
+        _hhmmss_ = (
+            first_time.strftime('%H:%M:%S'),
+            last_time.strftime('%H:%M:%S')
+        )
+        header['DATE-OBS'] = _isodate_  # Ex: '2025-06-29'
+        header['T_START'] = _isodate_ + "T" + _hhmmss_[0]  # Ex: '2025-06-29T12:00:00'
+        header['T_END'] = _isodate_ + "T" + _hhmmss_[1]  # Ex: '2025-06-29T12:59:59'
+        header['N_RECORD'] = len(records_to_generate_file)
+        header['FREQUEN'] = "45GHz / 90GHz"
+
+        header.add_comment("COPYRIGHT. Grant of use.")
+        header.add_comment("These data are property of Universidade Presbiteriana Mackenzie.")
+        header.add_comment("The Centro de Radio Astronomia e Astrofisica Mackenzie is reponsible")
+        header.add_comment("for their distribution. Grant of use permission is given for Academic ")
+        header.add_comment("purposes only.")
+
+        header.add_comment("Main Header: General metadata about the SST observation export")
+
+        header.add_comment(_print_space_fits_doc_file() + "FILENAME: Name of the generated FITS file")
+        header.add_comment(_print_space_fits_doc_file() + "INSTRUME: Instrument name")
+        header.add_comment(_print_space_fits_doc_file() + "TELESCOP: Telescope name")
+        header.add_comment(_print_space_fits_doc_file() + "ORIGIN: Producing institution")
+        header.add_comment(_print_space_fits_doc_file() + "OBSERVAT: Observatory site name")
+        header.add_comment(_print_space_fits_doc_file() + "STATION: Latitude, longitude, and altitude")
+        header.add_comment(_print_space_fits_doc_file() + "TZ: Time zone reference")
+        header.add_comment(_print_space_fits_doc_file() + "DATE-OBS: Date of the observation (YYYY-MM-DD)")
+        header.add_comment(_print_space_fits_doc_file() + "T_START / T_END: Observation start/end in ISO 8601 format")
+        header.add_comment("N_RECORD: Number of data rows (time samples) in the binary table")
+        header.add_comment(_print_space_fits_doc_file() + "FREQUEN: Frequency bands and channel mapping")
 
         primary_hdu = fits.PrimaryHDU(header=header)
-
-        # Geração da tabela de caminhos de arquivo distintos
-        unique_filepaths = list(set(rec['FILEPATH'] for rec in records_to_generate_file))
-        filepath_ids = range(len(unique_filepaths))  # Generate unique IDs
-        col_filepath_id = fits.Column(name='FILEPATH_ID', format='I', array=list(filepath_ids))
-        col_filepath = fits.Column(name='FILEPATHSOURCE', format='A100', array=unique_filepaths)
-        filepath_hdu = fits.BinTableHDU.from_columns([col_filepath_id, col_filepath], name='FilePathTable')
-
-        # Mapeia os caminhos de arquivo para IDs (ao invés de usar o caminho diretamente)
-        filepath_id_map = {fp: idx for idx, fp in enumerate(unique_filepaths)}
-        col_filepath_index = fits.Column(name='FILEPATH_IDX', format='I',
-                                         array=[filepath_id_map[rec['FILEPATH']] for rec in records_to_generate_file])
-
-        # Colunas para a tabela principal de dados
-        """col_time = fits.Column(
-            name='UTC_TIME',
-            format='A10',  # 'A10' for a 10-character string to store 'YYYY-MM-DD'
-            array=[rec['UTC_TIME'].strftime('%Y-%m-%d') for rec in records]  # Converte datetime para 'YYYY-MM-DD' format
-        )"""
 
         col_tbmax = fits.Column(name='TBMAX', format='D', array=[float(rec['TBMAX']) for rec in records_to_generate_file])
         col_tbmin = fits.Column(name='TBMIN', format='D', array=[float(rec['TBMIN']) for rec in records_to_generate_file])
@@ -134,24 +141,10 @@ class ClsPoemasExportFileService:
         # Criação da tabela principal de dados com documentação adicional para cada coluna
         cols = fits.ColDefs([
             col_iso_datetime, col_tbmax, col_tbmin, col_nfreq, col_ele, col_azi, col_tbl45, col_tbr45,
-            col_tbl90, col_tbr90, col_filepath_index
+            col_tbl90, col_tbr90
         ])
         data_hdu = fits.BinTableHDU.from_columns(cols, name='DataTable')
 
-        # Adiciona comentários para cada tabela e suas respectivas colunas
-        primary_hdu.header.add_comment("Main Header: General metadata about the observation")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "DATE: Observation date in ISO format (YYYY-MM-DD)")
-
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "YEAR: Year of observation")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "MONTH: Month of observation")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "DAY: Day of observation")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "FREQ1: Primary frequency observed (in GHz)")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "FREQ2: Secondary frequency observed (in GHz)")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "TELESCOP: Name of the telescope used for the observation")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "OBSRVTRY: Location of the observatory")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "OBS_LATI: Latitude of the observatory (in decimal degrees)")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "OBS_LONG: Longitude of the observatory (in decimal degrees)")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "OBS_ALTI: Altitude of the observatory above sea level (in meters)")
 
         # Documentação da Tabela 1 - Data Table
         primary_hdu.header.add_comment("")
@@ -167,16 +160,10 @@ class ClsPoemasExportFileService:
         primary_hdu.header.add_comment(_print_space_fits_doc_file() + "TBR45: Right polarization brightness temperature at 45 GHz (Kelvin)")
         primary_hdu.header.add_comment(_print_space_fits_doc_file() + "TBL90: Left polarization brightness temperature at 90 GHz (Kelvin)")
         primary_hdu.header.add_comment(_print_space_fits_doc_file() + "TBR90: Right polarization brightness temperature at 90 GHz (Kelvin)")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "FILEPATH_IDX: References the file source in the FilePath Table")
 
-        # Documentação da Tabela 2 - FilePath Table
-        primary_hdu.header.add_comment("")
-        primary_hdu.header.add_comment("Table: FilePath - Contains unique file paths for each observation")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "FILEPATHSOURCE: Full file path for each observation.")
-        primary_hdu.header.add_comment(_print_space_fits_doc_file() + "Note: This table is indexed and referenced in the main data table.")
 
         # Grava o arquivo FITS com a tabela principal de dados e a tabela de caminhos de arquivo
-        hdul = fits.HDUList([primary_hdu, data_hdu, filepath_hdu])
+        hdul = fits.HDUList([primary_hdu, data_hdu])
         hdul.writeto(fits_file_path, overwrite=True)
 
         print(f"FITS file created: {fits_file_path}")
@@ -203,9 +190,9 @@ class ClsPoemasExportFileService:
     import csv
 
     @staticmethod
-    def _create_csv_file(csv_file_path: str, records_to_generate_file: list):
+    def _create_csv_file_from_poemas_fits(csv_file_path: str, records_to_generate_file: list):
         """
-        Cria um arquivo CSV para o POEMAS, incluindo um bloco de comentários com metadados no topo.
+        Cria um arquivo CSV para dados do POEMAS, com metadados no topo e apenas os campos definidos no FITS.
 
         :param csv_file_path: Caminho completo do CSV de saída
         :param records_to_generate_file: Lista de registros (JSONs) a exportar
@@ -224,8 +211,7 @@ class ClsPoemasExportFileService:
             "TBL45",
             "TBR45",
             "TBL90",
-            "TBR90",
-            "FILEPATH_IDX"
+            "TBR90"
         ]
 
         os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
@@ -233,16 +219,25 @@ class ClsPoemasExportFileService:
         with open(csv_file_path, mode='w', newline='') as csvfile:
             # Header de metadados como comentários
             csvfile.write("# Metadata Header\n")
-            csvfile.write(f"# DATE: {records_to_generate_file[0].get('DATE', '')}\n")
-            csvfile.write(f"# YEAR: {records_to_generate_file[0].get('UTC_TIME_YEAR', '')}\n")
-            csvfile.write(f"# MONTH: {records_to_generate_file[0].get('UTC_TIME_MONTH', '')}\n")
-            csvfile.write(f"# DAY: {records_to_generate_file[0].get('UTC_TIME_DAY', '')}\n")
+
+            first_time = records_to_generate_file[0]['UTC_TIME']
+            last_time = records_to_generate_file[-1]['UTC_TIME']
+
+            iso_date = first_time.strftime('%Y-%m-%d')
+            t_start = first_time.strftime('%Y-%m-%dT%H:%M:%S')
+            t_end = last_time.strftime('%Y-%m-%dT%H:%M:%S')
+
+            csvfile.write("# ORIGIN: CRAAM/Universidade Presbiteriana Mackenzie\n")
             csvfile.write("# TELESCOP: POlarization Emission of Millimeter Activity at the Sun (POEMAS)\n")
             csvfile.write("# INSTRUME: POlarization Emission of Millimeter Activity at the Sun (POEMAS)\n")
-            csvfile.write("# OBSRVTRY: Complejo Astronomico El Leoncito (CASLEO)\n")
-            csvfile.write("# OBS_ALTI: 2552 m\n")
-            csvfile.write("# OBS_LONG: -69.295583\n")
-            csvfile.write("# OBS_LATI: -31.798527\n")
+            csvfile.write("# OBSERVAT: CASLEO\n")
+            csvfile.write("# STATION: Lat = -31.79852700, Lon = -69.29558300, Height = 2.552 km\n")
+            csvfile.write("# TZ: GMT-3\n")
+            csvfile.write(f"# DATE-OBS: {iso_date}\n")
+            csvfile.write(f"# T_START: {t_start}\n")
+            csvfile.write(f"# T_END: {t_end}\n")
+            csvfile.write(f"# N_RECORDS: {len(records_to_generate_file)}\n")
+            csvfile.write("# FREQUEN: 45GHz / 90GHz\n")
             csvfile.write(f"# FILENAME: {os.path.basename(csv_file_path)}\n")
             csvfile.write("#\n")
 
@@ -266,11 +261,10 @@ class ClsPoemasExportFileService:
                     "TBL45": float(record.get("TBL45", 0.0)),
                     "TBR45": float(record.get("TBR45", 0.0)),
                     "TBL90": float(record.get("TBL90", 0.0)),
-                    "TBR90": float(record.get("TBR90", 0.0)),
-                    "FILEPATH_IDX": int(record.get("FILEPATH_IDX", 0))
+                    "TBR90": float(record.get("TBR90", 0.0))
                 })
 
-        print(f"[CSV] CSV file created with header metadata: {csv_file_path}")
+        print(f"[CSV] Arquivo CSV do POEMAS criado: {csv_file_path}")
 
     @staticmethod
     def generate_json_file(file_name: str, output_folder:str,  records_to_generate_file: list) -> str:

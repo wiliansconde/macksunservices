@@ -29,9 +29,13 @@ Uso manual:
     1. Navegue até a raiz do projeto:
        cd C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Craam_Loader
 
+
+       SST
+       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2022\"
+    
     2. Execute com:
        POEMAS
-       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2020\M11"
+       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2020"
        
        SST
        python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2022\M10\M10"

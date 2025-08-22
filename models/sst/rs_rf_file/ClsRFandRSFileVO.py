@@ -33,3 +33,4 @@ class ClsRFandRSFileVO(ClsBaseVO):
         self.GPS_STATUS = record['GPS_STATUS']
         self.RECNUM = record['RECNUM']
         self.TELESCOPE = 'SST'
+        self.SSTType=''

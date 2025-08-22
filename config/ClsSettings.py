@@ -19,6 +19,12 @@ class ClsSettings:
      MONGO_AZURE_USER = os.getenv('MONGO_AZURE_USER', 'usrmongosrv')
      MONGO_AZURE_PASSWORD = os.getenv('MONGO_AZURE_PASSWORD', 'Teste.100')
 
+    # ZENODO
+     ZENODO_TOKEN = "vN0jaQTdNwmfhs4lg6abmdUwssTLnl6eSZpuKSVkYMSfyyrcfEJGmzEyqCuJ"
+     ZENODO_BASE_URL = "https://zenodo.org/api"
+     ZENODO_COMMUNITY = "conde_set"
+     ZENODO_LICENSE = "cc-by-4.0"
+     
      AZURE_BLOB_CONNECTION_STRING = os.getenv(
          'AZURE_BLOB_CONNECTION_STRING',
          'DefaultEndpointsProtocol=https;AccountName=arm2macksun;AccountKey=LIMQNROm7U2ZXiWRs/cCWdeRwhXf0BO4XkPO6eWwBk02SS8CXqPrD04zsOes3vFtrQqjAof3W5gH+AStxMBJOg==;EndpointSuffix=core.windows.net'

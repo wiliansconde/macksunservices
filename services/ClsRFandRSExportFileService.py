@@ -33,25 +33,67 @@ class ClsRFandRSExportFileService:
         header.add_blank()
         header.add_comment("")
 
-        header['FILENAME'] = os.path.basename(fits_file_path)
-        header['INSTRUME'] = "Solar Submillimeter Telescope (SST)"
-        header['TELESCOP'] = "Solar Submillimeter Telescope (SST)"
-        header['OBSRVTRY'] = "Complejo Astronomico El Leoncito (CASLEO)"
-        #header['FORMAT'] = "INTG/FAST/RF"
-        header['OBS_ALTI'] = "2552 m"
-        header['OBS_LONG'] = "-69.295583"
-        header['OBS_LATI'] = "-31.798527"
+        # ============================================
+        # Extração de tempo para DATE-OBS, T_START, T_END
+        # ============================================
+        first_time = records_to_generate_file[0]['UTC_TIME']
+        last_time = records_to_generate_file[-1]['UTC_TIME']
 
-        # Documentação do Header
+        _isodate_ = first_time.strftime('%Y-%m-%d')
+        _hhmmss_ = (
+            first_time.strftime('%H:%M:%S'),
+            last_time.strftime('%H:%M:%S')
+        )
+
+        # ============================================
+        # Cabeçalho FITS primário (header)
+        # ============================================
+        header = fits.Header()
+
+        # Comentário e separador inicial
+        header.add_blank()
+        header.add_comment("")
+
+        header['FILENAME'] = os.path.basename(fits_file_path)
+        header['ORIGIN'] = "CRAAM/Universidade Presbiteriana Mackenzie"
+        header['TELESCOP'] = "Solar Submillimeter Telescope"
+        header['INSTRUME'] = "Solar Submillimeter Telescope"
+
+        header['OBSERVAT'] = "CASLEO"
+        header['STATION'] = "Lat = -31.79852700, Lon = -69.29558300, Height = 2.552 km"
+        header['TZ'] = "GMT-3"
+
+        header['DATE-OBS'] = _isodate_  # Ex: '2025-06-29'
+        header['T_START'] = _isodate_ + "T" + _hhmmss_[0]  # Ex: '2025-06-29T12:00:00'
+        header['T_END'] = _isodate_ + "T" + _hhmmss_[1]  # Ex: '2025-06-29T12:59:59'
+        header['N_RECORD'] = len(records_to_generate_file)
+
+        header['DATA_TYP'] = records_to_generate_file[0]['SSTType']  # metadata["SSTType"]                # Ex: 'FAST' ou 'INTG'
+        header['ORIGFILE'] = records_to_generate_file[0]["FILEPATH"]  # metadata["RBDFileName"]            # Nome do binário original
+        header['FREQUEN'] = "212 GHz ch=1,2,3,4; 405 GHz ch=5,6"
+
+        header.add_comment("COPYRIGHT. Grant of use.")
+        header.add_comment("These data are property of Universidade Presbiteriana Mackenzie.")
+        header.add_comment("The Centro de Radio Astronomia e Astrofisica Mackenzie is reponsible")
+        header.add_comment("for their distribution. Grant of use permission is given for Academic ")
+        header.add_comment("purposes only.")
+
         header.add_comment("Main Header: General metadata about the SST observation export")
+
         header.add_comment(_print_space_fits_doc_file() + "FILENAME: Name of the generated FITS file")
-        header.add_comment(_print_space_fits_doc_file() + "INSTRUME: Instrument name (SST)")
+        header.add_comment(_print_space_fits_doc_file() + "INSTRUME: Instrument name")
         header.add_comment(_print_space_fits_doc_file() + "TELESCOP: Telescope name")
-        header.add_comment(_print_space_fits_doc_file() + "OBSRVTRY: Observatory institution")
-        #header.add_comment(_print_space_fits_doc_file() + "FORMAT: Internal data format (INTG/FAST/RF)")
-        header.add_comment(_print_space_fits_doc_file() + "OBS_ALTI: Observatory altitude in meters")
-        header.add_comment(_print_space_fits_doc_file() + "OBS_LONG: Observatory longitude in degrees")
-        header.add_comment(_print_space_fits_doc_file() + "OBS_LATI: Observatory latitude in degrees")
+        header.add_comment(_print_space_fits_doc_file() + "ORIGIN: Producing institution")
+        header.add_comment(_print_space_fits_doc_file() + "OBSERVAT: Observatory site name")
+        header.add_comment(_print_space_fits_doc_file() + "STATION: Latitude, longitude, and altitude")
+        header.add_comment(_print_space_fits_doc_file() + "TZ: Time zone reference")
+        header.add_comment(_print_space_fits_doc_file() + "DATE-OBS: Date of the observation (YYYY-MM-DD)")
+        header.add_comment(_print_space_fits_doc_file() + "T_START / T_END: Observation start/end in ISO 8601 format")
+        header.add_comment("N_RECORD: Number of data rows (time samples) in the binary table")
+        header.add_comment(_print_space_fits_doc_file() + "DATA_TYP: SST data format (e.g., FAST, INTG)")
+        header.add_comment(_print_space_fits_doc_file() + "ORIGFILE: Source binary file")
+        header.add_comment(_print_space_fits_doc_file() + "FREQUEN: Frequency bands and channel mapping")
+
 
         primary_hdu = fits.PrimaryHDU(header=header)
 
@@ -146,110 +188,131 @@ class ClsRFandRSExportFileService:
     @staticmethod
     def _create_csv_file(csv_file_path: str, records_to_generate_file: list):
         """
-        Cria um arquivo CSV para o SST (INTG/FAST/RF) incluindo documentação de campos como comentários no topo.
+        Cria um arquivo CSV contendo os mesmos campos da tabela de dados do arquivo FITS.
+        As primeiras linhas do CSV incluem metadados de cabeçalho e documentação.
         """
 
-        if not records_to_generate_file:
-            print("[CSV] Nenhum registro disponível para exportação.")
-            return
+        def _print_space_csv_doc():
+            return " " * 3
 
+        # =============================
+        # Extração de tempo e metadados
+        # =============================
+        first_time = records_to_generate_file[0]['UTC_TIME']
+        last_time = records_to_generate_file[-1]['UTC_TIME']
+
+        _isodate_ = first_time.strftime('%Y-%m-%d')
+        _hhmmss_ = (
+            first_time.strftime('%H:%M:%S'),
+            last_time.strftime('%H:%M:%S')
+        )
+
+        origin = "CRAAM/Universidade Presbiteriana Mackenzie"
+        telescope = "Solar Submillimeter Telescope"
+        instrument = "Solar Submillimeter Telescope"
+        observatory = "CASLEO"
+        station = "Lat = -31.79852700, Lon = -69.29558300, Height = 2.552 km"
+        timezone = "GMT-3"
+        data_type = records_to_generate_file[0]["SSTType"]
+        original_file = records_to_generate_file[0]["FILEPATH"]
+        frequen = "212 GHz ch=1,2,3,4 / 405 GHz ch=5,6"
+        n_records = len(records_to_generate_file)
+
+        # =============================
+        # Campos (iguais ao FITS)
+        # =============================
         fieldnames = [
             "ISO_DATETIME",
-            "TIME",
-            "ADCVAL_1",
-            "ADCVAL_2",
-            "ADCVAL_3",
-            "ADCVAL_4",
-            "ADCVAL_5",
-            "ADCVAL_6",
+            "ADCVAL_1", "ADCVAL_2", "ADCVAL_3", "ADCVAL_4", "ADCVAL_5", "ADCVAL_6",
             "POS_TIME",
-            "AZIPOS",
-            "ELEPOS",
-            "PM_DAZ",
-            "PM_DEL",
-            "AZIERR",
-            "ELEERR",
-            "X_OFF",
-            "Y_OFF",
-            "OFF_1",
-            "OFF_2",
-            "OFF_3",
-            "OFF_4",
-            "OFF_5",
-            "OFF_6",
-            "TARGET",
-            "OPMODE",
-            "GPS_STATUS",
-            "RECNUM"
+            "AZIPOS", "ELEPOS",
+            "PM_DAZ", "PM_DEL",
+            "AZIERR", "ELEERR",
+            "X_OFF", "Y_OFF",
+            "OFF_1", "OFF_2", "OFF_3", "OFF_4", "OFF_5", "OFF_6",
+            "TARGET", "OPMODE", "GPS_STATUS", "RECNUM"
         ]
 
-        os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
+        with open(csv_file_path, mode="w", newline="") as csv_file:
+            writer = csv.writer(csv_file)
 
-        with open(csv_file_path, mode='w', newline='') as csvfile:
-            # ================================
-            # Documentação dos campos (bloco de comentários)
-            # ================================
-            csvfile.write(
-                "# ISO_DATETIME: Date and time in ISO 8601 format with milliseconds (YYYY-MM-DDTHH:MM:SS.sss)\n")
-            csvfile.write("# TIME: Time in 0.1 ms since 0 UT\n")
-            csvfile.write("# ADCVAL_1 to ADCVAL_6: ADC channel values\n")
-            csvfile.write("# POS_TIME: Time of position sampling (0.1 ms since 0 UT)\n")
-            csvfile.write("# AZIPOS: Positioner azimuth in millidegrees\n")
-            csvfile.write("# ELEPOS: Positioner elevation in millidegrees\n")
-            csvfile.write("# PM_DAZ: Pointing model correction in azimuth (mdeg)\n")
-            csvfile.write("# PM_DEL: Pointing model correction in elevation (mdeg)\n")
-            csvfile.write("# AZIERR: Azimuth error in millidegrees\n")
-            csvfile.write("# ELEERR: Elevation error in millidegrees\n")
-            csvfile.write("# X_OFF: Offset in azimuth or RA\n")
-            csvfile.write("# Y_OFF: Offset in elevation or DEC\n")
-            csvfile.write("# OFF_1 to OFF_6: Radiometric attenuator settings\n")
-            csvfile.write("# TARGET: Observed target (including calibration mirror position)\n")
-            csvfile.write("# OPMODE: Operation mode\n")
-            csvfile.write("# GPS_STATUS: GPS status\n")
-            csvfile.write("# RECNUM: Record number\n")
-            csvfile.write("#\n")
+            # =============================
+            # Header técnico e documentação
+            # =============================
+            writer.writerow(["# CRAAM/Universidade Presbiteriana Mackenzie - SST Data Export"])
+            writer.writerow(["# Main Header: General metadata about the SST observation export"])
+            writer.writerow(["# ORIGIN:", origin])
+            writer.writerow(["# TELESCOP:", telescope])
+            writer.writerow(["# INSTRUME:", instrument])
+            writer.writerow(["# OBSERVAT:", observatory])
+            writer.writerow(["# STATION:", station])
+            writer.writerow(["# TZ:", timezone])
+            writer.writerow(["# DATE-OBS:", _isodate_])
+            writer.writerow(["# T_START:", f"{_isodate_}T{_hhmmss_[0]}"])
+            writer.writerow(["# T_END:", f"{_isodate_}T{_hhmmss_[1]}"])
+            writer.writerow(["# N_RECORD:", n_records])
+            writer.writerow(["# DATA_TYP:", data_type])
+            writer.writerow(["# ORIGFILE:", original_file])
+            writer.writerow(["# FREQUEN:", frequen])
+            writer.writerow(["#"])
+            writer.writerow(["# COPYRIGHT. Grant of use."])
+            writer.writerow(["# These data are property of Universidade Presbiteriana Mackenzie."])
+            writer.writerow(["# The Centro de Radio Astronomia e Astrofisica Mackenzie is reponsible"])
+            writer.writerow(["# for their distribution. Grant of use permission is given for Academic purposes only."])
+            writer.writerow(["#"])
+            writer.writerow(["# Columns:"])
+            writer.writerow(
+                ["# " + _print_space_csv_doc() + "ISO_DATETIME: Date and time in ISO 8601 format with milliseconds"])
+            writer.writerow(["# " + _print_space_csv_doc() + "ADCVAL_1 to ADCVAL_6: ADC channel values (uint16)"])
+            writer.writerow(["# " + _print_space_csv_doc() + "POS_TIME: Position timestamp (int32)"])
+            writer.writerow(["# " + _print_space_csv_doc() + "AZIPOS / ELEPOS: Positioner coordinates (.001 deg)"])
+            writer.writerow(["# " + _print_space_csv_doc() + "PM_DAZ / PM_DEL: Pointing model corrections (int16)"])
+            writer.writerow(["# " + _print_space_csv_doc() + "AZIERR / ELEERR: Pointing errors (.001 deg)"])
+            writer.writerow(["# " + _print_space_csv_doc() + "X_OFF / Y_OFF: Offset to target center (int16)"])
+            writer.writerow(["# " + _print_space_csv_doc() + "OFF_1 to OFF_6: Attenuator settings (int16)"])
+            writer.writerow(["# " + _print_space_csv_doc() + "TARGET: Observed target / mirror position (int8)"])
+            writer.writerow(["# " + _print_space_csv_doc() + "OPMODE: Operation mode (int8)"])
+            writer.writerow(["# " + _print_space_csv_doc() + "GPS_STATUS: GPS status (int16)"])
+            writer.writerow(["# " + _print_space_csv_doc() + "RECNUM: Record number (int32)"])
+            writer.writerow([])  # Linha em branco
 
-            # ================================
+            # =============================
             # Escrita dos dados
-            # ================================
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            # =============================
+            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
             writer.writeheader()
 
-            for record in records_to_generate_file:
-                iso_datetime_str = (
-                    record["UTC_TIME"].strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
-                    if "UTC_TIME" in record and record["UTC_TIME"] is not None
-                    else ""
-                )
+            for rec in records_to_generate_file:
+                row = {
+                    "ISO_DATETIME": rec["UTC_TIME"].strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3],
+                    "ADCVAL_1": rec["ADCVAL_1"],
+                    "ADCVAL_2": rec["ADCVAL_2"],
+                    "ADCVAL_3": rec["ADCVAL_3"],
+                    "ADCVAL_4": rec["ADCVAL_4"],
+                    "ADCVAL_5": rec["ADCVAL_5"],
+                    "ADCVAL_6": rec["ADCVAL_6"],
+                    "POS_TIME": rec["POS_TIME"],
+                    "AZIPOS": rec["AZIPOS"],
+                    "ELEPOS": rec["ELEPOS"],
+                    "PM_DAZ": rec["PM_DAZ"],
+                    "PM_DEL": rec["PM_DEL"],
+                    "AZIERR": rec["AZIERR"],
+                    "ELEERR": rec["ELEERR"],
+                    "X_OFF": rec["X_OFF"],
+                    "Y_OFF": rec["Y_OFF"],
+                    "OFF_1": rec["OFF_1"],
+                    "OFF_2": rec["OFF_2"],
+                    "OFF_3": rec["OFF_3"],
+                    "OFF_4": rec["OFF_4"],
+                    "OFF_5": rec["OFF_5"],
+                    "OFF_6": rec["OFF_6"],
+                    "TARGET": rec["TARGET"],
+                    "OPMODE": rec["OPMODE"],
+                    "GPS_STATUS": rec["GPS_STATUS"],
+                    "RECNUM": rec["RECNUM"]
+                }
+                writer.writerow(row)
 
-                writer.writerow({
-                    "ISO_DATETIME": iso_datetime_str,
-                    "TIME": record.get("TIME", ""),
-                    "ADCVAL_1": record.get("ADCVAL_1", ""),
-                    "ADCVAL_2": record.get("ADCVAL_2", ""),
-                    "ADCVAL_3": record.get("ADCVAL_3", ""),
-                    "ADCVAL_4": record.get("ADCVAL_4", ""),
-                    "ADCVAL_5": record.get("ADCVAL_5", ""),
-                    "ADCVAL_6": record.get("ADCVAL_6", ""),
-                    "POS_TIME": record.get("POS_TIME", ""),
-                    "AZIPOS": record.get("AZIPOS", ""),
-                    "ELEPOS": record.get("ELEPOS", ""),
-                    "PM_DAZ": record.get("PM_DAZ", ""),
-                    "PM_DEL": record.get("PM_DEL", ""),
-                    "AZIERR": record.get("AZIERR", ""),
-                    "ELEERR": record.get("ELEERR", ""),
-                    "X_OFF": record.get("X_OFF", ""),
-                    "Y_OFF": record.get("Y_OFF", ""),
-                    "OFF_1": record.get("OFF_1", ""),
-                    "OFF_2": record.get("OFF_2", ""),
-                    "OFF_3": record.get("OFF_3", ""),
-                    "OFF_4": record.get("OFF_4", ""),
-                    "OFF_5": record.get("OFF_5", ""),
-                    "OFF_6": record.get("OFF_6", ""),
-                    "TARGET": record.get("TARGET", ""),
-                    "OPMODE": record.get("OPMODE", ""),
-                    "GPS_STATUS": record.get("GPS_STATUS", ""),
-                    "RECNUM": record.get("RECNUM", "")
-                })
+        print(f"CSV file created: {csv_file_path}")
 
-        print(f"[CSV] CSV file created with documentation header: {csv_file_path}")
+

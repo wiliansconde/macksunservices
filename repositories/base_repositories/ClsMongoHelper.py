@@ -81,6 +81,37 @@ class ClsMongoHelper:
         return records
 
     @staticmethod
+    def find_records_by_time_range_sst_type(mongo_collection_name, date_to_generate_file, sst_type):
+
+        """
+        Busca documentos que correspondem ao intervalo especificado de tempo, com um limite opcional.
+        O intervalo é definido por UTC_TIME_YEAR, UTC_TIME_MONTH, UTC_TIME_DAY e UTC_TIME_HOUR.
+        """
+        # Define o início do dia (00:00:00)
+        start_time = datetime.combine(date_to_generate_file, datetime.min.time())
+
+        # Define o fim do dia (23:59:59)
+        end_time = datetime.combine(date_to_generate_file, datetime.max.time())
+
+        query = {
+            "UTC_TIME": {
+                "$gte": start_time,
+                "$lte": end_time
+            },
+            "SSTType": sst_type  # "FAST" ou "INTG"
+        }
+
+        # Executa a consulta com o limite de documentos
+        collection = ClsMongoHelper.get_data_collection(mongo_collection_name)
+
+        start = time.time()
+        records = list(collection.find(query).sort("UTC_TIME", ASCENDING))  # .limit(limit)
+        duration = time.time() - start
+
+        print(f"[QUERY] {len(records)} documentos encontrados em {duration:.2f} segundos.")
+        return records
+
+    @staticmethod
     def insert_vos_to_mongodb(vos: List, collection_name: str, file_path: str) -> ClsProcessingResult:
         client = ClsConnection.get_mongo_data_client()
         db = client[ClsConnection.get_mongo_data_db_name()]

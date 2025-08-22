@@ -37,3 +37,4 @@ class ClsPoemasFileRepository:
             print(f"Nenhum documento encontrado na coleção {mongo_collection_name} para o intervalo de tempo especificado.")
 
         return records
+

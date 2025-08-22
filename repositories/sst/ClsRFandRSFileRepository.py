@@ -119,3 +119,21 @@ class ClsRFandRSFileRepository:
             print(f"Nenhum documento encontrado na coleção {mongo_collection_name} para o intervalo de tempo especificado.")
 
         return records
+
+    @staticmethod
+    def get_records_by_time_range_sst_type(date_to_generate_file, mongo_collection_name, sst_type):
+        limit = 1000
+        """
+        Obtém os registros com base no intervalo de tempo fornecido e aplica um limite opcional.
+        """
+        # mongo_collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_DATA_POEMAS_FILE_10ms)
+        records = ClsMongoHelper.find_records_by_time_range_sst_type(mongo_collection_name, date_to_generate_file,
+                                                                     sst_type)
+
+        if records:
+            print(f"{len(records)} documentos encontrados na coleção {mongo_collection_name}")
+        else:
+            print(
+                f"Nenhum documento encontrado na coleção {mongo_collection_name} para o intervalo de tempo especificado.")
+
+        return records

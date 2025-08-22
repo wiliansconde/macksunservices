@@ -88,6 +88,7 @@ class ClsDataPartitionResolverService:
 
 
     def _get_date_range(self, timestamp: datetime, resolution: ClsResolutionEnum):
+        #PArtition_map definicao da granularidade. wconde
         resolution_value = resolution.value.lower()
 
         if resolution_value.endswith("ms"):

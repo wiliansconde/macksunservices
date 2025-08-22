@@ -97,9 +97,9 @@ class run_job_generate_file_export:
             return None, "No SST records found."
 
         fits_path = ClsRFandRSExportFileService.generate_fits_file(file_name, output_folder, records)
-        csv_path = ClsPoemasExportFileService.generate_csv_file(file_name, output_folder, records)
+        #csv_path = ClsPoemasExportFileService.generate_csv_file(file_name, output_folder, records)
 
-        return {"fits": fits_path, "csv": csv_path}, None
+        return {"fits": fits_path, "csv": "csv_path"}, None
 
     @staticmethod
     def run():
@@ -137,7 +137,7 @@ class run_job_generate_file_export:
                     records = ClsPoemasFileRepository.get_records_by_time_range(target_date, mongo_collection)
 
                     fits_path = ClsPoemasExportFileService.generate_fits_file(file_name, output_folder, records)
-                    csv_path = ClsPoemasExportFileService.generate_csv_file(file_name, output_folder, records)
+                    #csv_path = ClsPoemasExportFileService.generate_csv_file(file_name, output_folder, records)
 
                     run_job_generate_file_export.export_and_upload(
                         fits_path,
@@ -148,7 +148,7 @@ class run_job_generate_file_export:
                         target_date,
                         "FITS"
                     )
-                    run_job_generate_file_export.export_and_upload(
+                    """run_job_generate_file_export.export_and_upload(
                         csv_path,
                         container_name,
                         blob_path_csv,
@@ -156,7 +156,7 @@ class run_job_generate_file_export:
                         resolution_enum,
                         target_date,
                         "CSV"
-                    )
+                    )"""
 
 
                 elif instrument_enum == ClsInstrumentEnum.SST:
