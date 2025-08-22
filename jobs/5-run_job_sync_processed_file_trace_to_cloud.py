@@ -25,7 +25,7 @@ Uso manual:
        cd C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Craam_Loader
 
     2. Execute com:
-       python -m jobs.run_job_sync_processed_file_trace_to_cloud
+       python -m jobs.5-run_job_sync_processed_file_trace_to_cloud
 
 Uso em cron (dentro de container):
     */30 * * * * root python /app/jobs/run_job_sync_processed_file_trace_to_cloud.py >> /var/log/cron.log 2>&1
