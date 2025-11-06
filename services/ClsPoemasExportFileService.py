@@ -46,11 +46,11 @@ class ClsPoemasExportFileService:
 
     import os
     @staticmethod
-    def generate_fits_file( file_name:str, output_folder:str, records_to_generate_file: list):
+    def generate_fits_file( file_name:str, output_folder:str, records_to_generate_file: list, file_resolution:str):
 
         full_file_path = os.path.join(output_folder, f"{file_name}.fits")
 
-        ClsPoemasExportFileService._create_fits_file(full_file_path, records_to_generate_file)
+        ClsPoemasExportFileService._create_fits_file(full_file_path, records_to_generate_file, file_resolution)
 
         print(f"[EXPORT] Arquivo FITS gerado: {full_file_path}")
         return full_file_path
@@ -58,7 +58,7 @@ class ClsPoemasExportFileService:
 
 
     @staticmethod
-    def _create_fits_file(fits_file_path: str, records_to_generate_file: list):
+    def _create_fits_file(fits_file_path: str, records_to_generate_file: list, file_resolution:str):
         """
         Cria um arquivo FITS a partir de uma lista de registros (JSONs), agrupando-os por data.
         """
@@ -94,13 +94,16 @@ class ClsPoemasExportFileService:
         header['N_RECORD'] = len(records_to_generate_file)
         header['FREQUEN'] = "45GHz / 90GHz"
 
+        header['FILERES'] = file_resolution
+
+
         header.add_comment("COPYRIGHT. Grant of use.")
         header.add_comment("These data are property of Universidade Presbiteriana Mackenzie.")
         header.add_comment("The Centro de Radio Astronomia e Astrofisica Mackenzie is reponsible")
         header.add_comment("for their distribution. Grant of use permission is given for Academic ")
         header.add_comment("purposes only.")
 
-        header.add_comment("Main Header: General metadata about the SST observation export")
+        header.add_comment("Main Header: General metadata about the observation export")
 
         header.add_comment(_print_space_fits_doc_file() + "FILENAME: Name of the generated FITS file")
         header.add_comment(_print_space_fits_doc_file() + "INSTRUME: Instrument name")
@@ -113,6 +116,19 @@ class ClsPoemasExportFileService:
         header.add_comment(_print_space_fits_doc_file() + "T_START / T_END: Observation start/end in ISO 8601 format")
         header.add_comment("N_RECORD: Number of data rows (time samples) in the binary table")
         header.add_comment(_print_space_fits_doc_file() + "FREQUEN: Frequency bands and channel mapping")
+
+        # ---- Resolution-level data documentation ----
+        header.add_comment("DATA RESOLUTION NOTES")
+        header.add_comment("FILERES indicates the temporal resolution of this file.")
+        header.add_comment("When FILERES = 10ms: represents the raw dataset, containing one full day")
+        header.add_comment("of observation exactly as registered by the instrument acquisition system.")
+        header.add_comment("When FILERES = 100ms: data are derived from the 10ms raw series by applying")
+        header.add_comment("the median of each set of 10 consecutive samples within non-overlapping 100ms intervals.")
+        header.add_comment("The timestamp of each record refers to the center of its 100ms window.")
+        header.add_comment("When FILERES = 1s: data are derived from the 10ms raw series by applying")
+        header.add_comment("the median of each set of 100 consecutive samples within non-overlapping 1s intervals.")
+        header.add_comment("The timestamp of each record refers to the center of its 1s window.")
+
 
         primary_hdu = fits.PrimaryHDU(header=header)
 

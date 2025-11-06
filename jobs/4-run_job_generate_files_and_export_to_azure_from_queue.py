@@ -11,6 +11,7 @@ from repositories.base_repositories.ClsAzureBlobHelper import ClsAzureBlobHelper
 from repositories.export_to_cloud.ClsFileExportRegistryToCloudRepository import ClsFileExportRegistryToCloudRepository
 from repositories.poemas.ClsPoemasFileRepository import ClsPoemasFileRepository
 from repositories.sst.ClsRFandRSFileRepository import ClsRFandRSFileRepository
+from services.ClsPoemasAggregationService import ClsPoemasAggregationService
 from services.ClsPoemasExportFileService import ClsPoemasExportFileService
 from services.ClsRFandRSExportFileService import ClsRFandRSExportFileService
 from utils.ZipHelper import ZipHelper
@@ -78,7 +79,7 @@ class run_job_generate_file_export:
 
         ClsFileExportRegistryToCloudRepository.insert_export_record({
             "instrument": instrument_enum.name,
-            "resolution": resolution_enum.value,
+            "resolution": str(resolution_enum.value),
             "date": target_date,
             "format": format_name,
             "container_name": container_name,
@@ -129,17 +130,17 @@ class run_job_generate_file_export:
 
                 controller = ClsPartitionMapController()
                 mongo_collection = controller.get_target_collection(instrument_enum, resolution_enum, target_date)
-
-                print(f"[ExportJob] Processando export: Instrument={instrument_str}, Resolution={resolution_str}, Date={target_date}")
+                print("")
+                print(f"[{datetime.now()}] [ExportJob] Processando export: Instrument={instrument_str}, Resolution={resolution_str}, Date={target_date}")
 
 
                 if instrument_enum == ClsInstrumentEnum.POEMAS:
                     records = ClsPoemasFileRepository.get_records_by_time_range(target_date, mongo_collection)
 
-                    fits_path = ClsPoemasExportFileService.generate_fits_file(file_name, output_folder, records)
-                    #csv_path = ClsPoemasExportFileService.generate_csv_file(file_name, output_folder, records)
+                    #arquivo bruto 10ms
+                    #fits_path = ClsPoemasExportFileService.generate_fits_file(file_name, output_folder, records, resolution_enum)
 
-                    run_job_generate_file_export.export_and_upload(
+                    """run_job_generate_file_export.export_and_upload(
                         fits_path,
                         container_name,
                         blob_path_fits,
@@ -147,7 +148,7 @@ class run_job_generate_file_export:
                         resolution_enum,
                         target_date,
                         "FITS"
-                    )
+                    )"""
                     """run_job_generate_file_export.export_and_upload(
                         csv_path,
                         container_name,
@@ -158,6 +159,52 @@ class run_job_generate_file_export:
                         "CSV"
                     )"""
 
+                    # arquivo suavizado 100ms
+                    """records_100ms = records
+                    fits_path = ClsPoemasExportFileService.generate_fits_file(file_name, output_folder, records_100ms,
+                                                                              resolution_enum.Milliseconds_100.value)
+
+                    run_job_generate_file_export.export_and_upload(
+                        fits_path,
+                        container_name,
+                        blob_path_fits,
+                        instrument_enum,
+                        resolution_enum.Milliseconds_100.value,
+                        target_date,
+                        "FITS"
+                    )"""
+
+                    # arquivo suavizado 1s
+                    #records_1s = records
+                    resolution_str = "1s"
+                    instrument_enum = ClsInstrumentEnum[instrument_str]
+                    resolution_enum = ClsResolutionEnum.from_value(resolution_str)
+
+                    file_name = run_job_generate_file_export.generate_filename_prefix(instrument_str, resolution_str,
+                                                                                      target_date)
+                    container_name = instrument_str.lower()
+
+                    blob_path_fits = ClsAzureBlobHelper.build_blob_path(instrument_enum, resolution_enum, target_date,
+                                                                        "zip", "FITS")
+
+                    """blob_path_csv = ClsAzureBlobHelper.build_blob_path(instrument_enum, resolution_enum, target_date,
+                                                                       "zip", "CSV")"""
+
+                    records_1s = ClsPoemasAggregationService.aggregate_list_10ms_to_1s(records)
+
+                    fits_path = ClsPoemasExportFileService.generate_fits_file(file_name, output_folder, records_1s,
+                                                                              resolution_str)
+
+
+                    run_job_generate_file_export.export_and_upload(
+                        fits_path,
+                        container_name,
+                        blob_path_fits,
+                        instrument_enum,
+                        resolution_enum,
+                        target_date,
+                        "FITS"
+                    )
 
                 elif instrument_enum == ClsInstrumentEnum.SST:
                     records = ClsRFandRSFileRepository.get_records_by_time_range(target_date, mongo_collection)
@@ -170,7 +217,7 @@ class run_job_generate_file_export:
                         container_name,
                         blob_path_fits,
                         instrument_enum,
-                        resolution_enum,
+                        resolution_enum.Seconds_01,
                         target_date,
                         "FITS"
                     )

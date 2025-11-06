@@ -59,6 +59,8 @@ class ClsAzureBlobHelper:
         Exemplo de saída:
         2025/06/27/poemas_10ms_2025-06-27_CSV.zip
         """
+        instr=instrument.value.lower()
+        res=resolution.value
         folder = f"{target_date.year}/{str(target_date.month).zfill(2)}/{str(target_date.day).zfill(2)}"
-        filename = f"{instrument.value.lower()}_{resolution.value}_{target_date.date()}_{file_type.lower()}.{file_extension}"
+        filename = f"{instr}_{res}_{target_date.date()}_{file_type.lower()}.{file_extension}"
         return f"{folder}/{filename}"

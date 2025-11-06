@@ -1,0 +1,135 @@
+schema_version: 1
+
+defaults:
+  fallback: "raise"
+
+processors:
+
+  # Descrição
+  # Escopo: POEMAS em árvore lógica por ano/mês/dia
+  # Critério: path_glob iniciando por POEMAS/** e extensão .trk
+  # Processador: PoemasProcessor
+  # Exemplo que casa: POEMAS/2011/M11/D22/FirstLight_111122_194805.TRK
+  # Exemplo que não casa: POEMAS/2011/M11/D22/evt.bin
+  - id: poemas_by_tree
+    class: services.processing_strategies.poemas_processor.PoemasProcessor
+    priority: 120
+    match:
+      all:
+        - path_glob: ["POEMAS/**"]
+        - ext: [".trk"]
+
+
+  # Descrição
+  # Escopo: SST submilimétrico série BI em árvore lógica por ano/mês/dia
+  # Critério: path_glob iniciando por SST/** e nome de arquivo com prefixo bi
+  # Processador: SSTBIProcessor
+  # Exemplo que casa: SST/2025/M09/D01/bi20250901.dat
+  # Exemplo que não casa: SST/2025/M09/D01/sst20250901.dat
+  - id: sst_bi_by_tree
+    class: services.processing_strategies.sst_bi_processor.SSTBIProcessor
+    priority: 120
+    match:
+      all:
+        - path_glob: ["SST/**"]
+        - prefix: ["bi"]
+
+  # Descrição
+  # Escopo: SST série BI compactada em ingestão
+  # Critério: path_glob contendo */ingest/*/SST/** e extensão .gz
+  # Processador: SSTBIProcessor
+  # Exemplo que casa: ingest/SST/2025/M09/D01/bi20250901.dat.gz
+  # Exemplo que não casa: ingest/SST/2025/M09/D01/bi20250901.dat
+  - id: sst_bi_ingest_gz
+    class: services.processing_strategies.sst_bi_processor.SSTBIProcessor
+    priority: 110
+    match:
+      all:
+        - path_glob: ["**/ingest/**/SST/**"]
+        - ext: [".gz"]
+
+  # Descrição
+  # Escopo: SST pós-processado em HDF5
+  # Critério: path_glob contendo processed/SST/** e extensão .h5 ou .hdf5
+  # Processador: SSTBIProcessor
+  # Exemplo que casa: processed/SST/2024/M07/bi_20240715.h5
+  # Exemplo que não casa: processed/POEMAS/2024/M07/evt.h5
+  - id: sst_processed_hdf5
+    class: services.processing_strategies.sst_bi_processor.SSTBIProcessor
+    priority: 100
+    match:
+      all:
+        - path_glob: ["**/processed/SST/**"]
+        - ext: [".h5", ".hdf5"]
+
+  # Descrição
+  # Escopo: AR30T mid-IR 30 THz em árvore lógica
+  # Critério: path_glob iniciando por AR30T/** e extensão científica comum (.fits, .csv)
+  # Processador: AR30TProcessor
+  # Exemplo que casa: AR30T/2023/M12/D05/ar30t_20231205.fits
+  # Exemplo que não casa: AR30T/2023/M12/D05/readme.txt
+  - id: ar30t_by_tree
+    class: services.processing_strategies.ar30t_processor.AR30TProcessor
+    priority: 120
+    match:
+      all:
+        - path_glob: ["AR30T/**"]
+        - any:
+            - ext: [".fits"]
+            - ext: [".csv"]
+
+  # Descrição
+  # Escopo: AR30T calibração
+  # Critério: path_glob contendo AR30T/**/calib/** e extensão .fits
+  # Processador: AR30TProcessor
+  # Exemplo que casa: AR30T/2023/M12/D05/calib/flat_20231205.fits
+  # Exemplo que não casa: AR30T/2023/M12/D05/data/flat_20231205.fits
+  - id: ar30t_calibration
+    class: services.processing_strategies.ar30t_processor.AR30TProcessor
+    priority: 110
+    match:
+      all:
+        - path_glob: ["AR30T/**/calib/**"]
+        - ext: [".fits"]
+
+  # Descrição
+  # Escopo: H-ALPHA imagens científicas
+  # Critério: path_glob iniciando por H-ALPHA/** e extensão .fits
+  # Processador: HAlphaProcessor
+  # Exemplo que casa: H-ALPHA/2022/M03/D17/halpha_20220317.fits
+  # Exemplo que não casa: H-ALPHA/2022/M03/D17/halpha_20220317.jpg
+  - id: halpha_fits_by_tree
+    class: services.processing_strategies.halpha_processor.HAlphaProcessor
+    priority: 120
+    match:
+      all:
+        - path_glob: ["H-ALPHA/**"]
+        - ext: [".fits"]
+
+  # Descrição
+  # Escopo: H-ALPHA derivados visuais para QA
+  # Critério: path_glob contendo **/H-ALPHA/**/qa/** e extensão .png ou .jpg
+  # Processador: HAlphaProcessor
+  # Exemplo que casa: data/H-ALPHA/2022/M03/D17/qa/preview_20220317.png
+  # Exemplo que não casa: data/H-ALPHA/2022/M03/D17/preview_20220317.png
+  - id: halpha_png_jpeg_qa
+    class: services.processing_strategies.halpha_processor.HAlphaProcessor
+    priority: 110
+    match:
+      all:
+        - path_glob: ["**/H-ALPHA/**/qa/**"]
+        - ext: [".png", ".jpg", ".jpeg"]
+
+  # Descrição
+  # Escopo: fallback específico da família SST quando nenhuma regra mais específica casar
+  # Critério: path_glob abrangendo SST/** sem outras restrições
+  # Processador: SSTBIProcessor
+  # Exemplo que casa: SST/misc/bi_test.dat
+  # Exemplo que não casa: POEMAS/misc/bi_test.dat
+  - id: sst_family_fallback
+    class: services.processing_strategies.sst_bi_processor.SSTBIProcessor
+    priority: 20
+    match:
+      any:
+        - path_glob: ["SST/**"]
+

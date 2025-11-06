@@ -46,7 +46,7 @@ class run_job_sync_processed_file_trace_to_cloud:
             # :param ignore_sync_flag: Se True, envia todos os documentos, mesmo os já sincronizados.
             #:param batch_limit: Número máximo de documentos a sincronizar por execução.
             ignore_sync_flag = True
-            batch_limit = 1000
+            batch_limit = 100000000
 
             print(f"[{datetime.now()}] [SyncJob] Iniciando sincronização da coleção 'processed_file_trace'...")
             total_synced = ClsProcessedFileTraceSyncController.sync_local_data_to_cloud_data(ignore_sync_flag,batch_limit)

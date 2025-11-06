@@ -78,7 +78,7 @@ class ClsRFandRSExportFileService:
         header.add_comment("for their distribution. Grant of use permission is given for Academic ")
         header.add_comment("purposes only.")
 
-        header.add_comment("Main Header: General metadata about the SST observation export")
+        header.add_comment("Main Header: General metadata about the observation export")
 
         header.add_comment(_print_space_fits_doc_file() + "FILENAME: Name of the generated FITS file")
         header.add_comment(_print_space_fits_doc_file() + "INSTRUME: Instrument name")
