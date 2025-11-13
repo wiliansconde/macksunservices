@@ -35,7 +35,7 @@ class ClsBaseBIFile(ABC):
         batch_size = 5000  # Tamanho do lote para inserções em massa
         for i in range(0, len(self.records), batch_size):
             batch = self.records[i:i + batch_size]
-            res = ClsMongoHelper.insert_vos_to_mongodb(batch, ClsSettings.MONGO_COLLECTION_DATA_SST_BI_FILE_1S, file_path)
+            res = ClsMongoHelper.insert_vos_to_mongodb(batch, ClsSettings.MONGO_COLLECTION_DATA_SST_BI_FILE, file_path)
             print('1 - ' + res.file_path)
             file_path_to_log = ClsFormat.format_file_path(res.file_path)
             ClsLoggerService.write_lines_inserted(file_path_to_log, res.inserted_count)

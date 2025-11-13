@@ -119,3 +119,43 @@ class ClsSSTFileGetCommonProperties:
             time_value = self.records[0].TIME
             full_datetime = ClsConvert.get_full_datetime(self.input_file, time_value)
             return full_datetime
+
+        # NOVOS MÉTODOS
+
+    @staticmethod
+    def extract_iso_date_from_name(file_path: str):
+        """
+        Extrai a data ISO (YYYY-MM-DD) a partir do nome do arquivo SST.
+
+        Aceita diferentes convenções históricas do SST:
+        - rf1160101.1150  → 2016-01-01   (ano desde 1900)
+        - rs2151231.2230  → 2021-12-31   (ano desde 1900)
+        - rf20030715T102030.rbd → 2003-07-15 (ano completo)
+        - rf030715102030.rbd   → 2003-07-15  (ano abreviado)
+        """
+        import os
+        from datetime import datetime
+
+        name = os.path.basename(file_path)
+        digits = "".join(ch for ch in name if ch.isdigit())
+
+        # 1) formato com ano completo: ex. 20030715...
+        if len(digits) >= 14:
+            y, m, d = int(digits[0:4]), int(digits[4:6]), int(digits[6:8])
+
+        # 2) formato SST antigo (ano desde 1900): ex. rf1160101.1150 -> 2016-01-01
+        elif len(digits) in (10, 11):
+            y = 1900 + int(digits[0:3])  # 116 → 2016
+            m = int(digits[3:5])
+            d = int(digits[5:7])
+
+        # 3) formato abreviado tipo rf030715... -> 2003-07-15
+        elif len(digits) >= 12:
+            y = 2000 + int(digits[0:2])
+            m = int(digits[2:4])
+            d = int(digits[4:6])
+
+        else:
+            raise ValueError(f"Não foi possível extrair data de {name} (dígitos={digits})")
+
+        return datetime(y, m, d).date()

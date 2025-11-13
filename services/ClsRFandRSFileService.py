@@ -192,6 +192,8 @@ class ClsRFandRSFileService:
             lambda row: ClsSSTFileFormat.format_rs_rf_file_record(ClsRFandRSFileVO(self.file_path, row.to_dict()), sst_type), axis=1
         )
 
+        x = '123'
+
     def insert_records_to_mongodb(self, timestamp, instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum, mongo_collection) -> str:
         batch_size = ClsSettings.MONGO_BATCH_SIZE_TO_INSERT  # Tamanho do lote para inserções em massa
         #mongo_collection = ClsSettings.get_mongo_collection_name_by_file_type(self.file_path)

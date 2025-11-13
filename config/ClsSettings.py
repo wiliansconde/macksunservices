@@ -13,6 +13,8 @@ class ClsSettings:
      MONGO_PASSWORD = os.getenv('MONGO_PASSWORD', '')
      MONGO_BATCH_SIZE_TO_INSERT = 100000
 
+     MONGO_COLLECTION_DATA_SST_BI_FILE = "data_SST_BI_FILE"
+
      # ===== MongoDB Azure (consumo via portal) =====
      MONGO_AZURE_HOST = os.getenv('MONGO_AZURE_HOST', 'mongosrv.mongocluster.cosmos.azure.com')
      MONGO_AZURE_DB = os.getenv('MONGO_AZURE_DB', 'macksundb')
@@ -35,6 +37,7 @@ class ClsSettings:
          'https://arm2macksun.blob.core.windows.net'
      )
 
+    #data_SST_BI_FILES
 
      @staticmethod
      def get_mongo_data_uri():

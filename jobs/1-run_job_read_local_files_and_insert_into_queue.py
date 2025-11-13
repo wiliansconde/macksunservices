@@ -42,13 +42,13 @@ Uso manual:
        
        
        FAST
-       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\2002\M02\D18\fast"
+       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\DadosSST\2016\M01\D01\fast"
 
        INTG
-       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\2002\M02\D18\intg"
+       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\DadosSST\2016\M01\D01\intg"
 
        BI FILES
-       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\2002\M02\D18\instr"
+       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\DadosSST\2016\M01\D01\instr"
 
     Main.read_local_files_and_insert_into_queue(
         r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\2002\M02\D18\')
