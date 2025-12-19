@@ -4,7 +4,7 @@ from services.ClsFileQueueService import ClsFileQueueService
 class ClsFileQueueController:
     @staticmethod
     def insert(file_path: str, instrument_name: str):
-        ClsFileQueueService.insert(file_path)
+        ClsFileQueueService.insert(file_path, instrument_name)
 
     @staticmethod
     def process_next_file():

@@ -355,7 +355,7 @@ class run_job_read_local_files_and_insert_into_queue:
                     continue
 
                 try:
-                    ClsFileQueueController.insert(file_path)
+                    ClsFileQueueController.insert(file_path, instrument_name)
                     inserted_count += 1
                     print(f"[Ingestor] Inserido: {file_path}")
 
