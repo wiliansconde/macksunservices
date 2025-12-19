@@ -11,7 +11,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from controllers.queue.ClsFileQueueController import ClsFileQueueController
 
 
-PROCESSED_DIR_NAME = "processed"
+PROCESSED_DIR_NAME = "00_processed"
+IGNORED_DIR_NAME = "00_ignored"
 
 
 """
@@ -26,6 +27,9 @@ Descrição:
     Varre recursivamente um diretório, identifica arquivos válidos conforme regras
     do instrumento informado, insere na fila via ClsFileQueueController e em seguida
     move o arquivo para uma pasta processed no mesmo nível em que o arquivo estava.
+
+    Arquivos inválidos conforme a regra do instrumento são movidos para uma pasta
+    ignored no mesmo nível em que o arquivo estava.
 
 Decisão de projeto:
     Este job NÃO tenta inferir o instrumento a partir do path ou do nome do arquivo.
@@ -43,9 +47,6 @@ Importante para integradores:
     A exclusão explícita de .txt evita que arquivos auxiliares ou de log
     sejam enfileirados incorretamente.
 
-    Se a regra de inclusão for estrita por extensão, a exclusão pode ser redundante,
-    mas é mantida aqui como mecanismo defensivo.
-
 Pasta processed:
     Este job ignora qualquer pasta chamada processed durante a varredura.
     Após inserir um arquivo na fila com sucesso, ele é movido para processed
@@ -54,6 +55,12 @@ Pasta processed:
     Atenção:
     O movimento para processed indica que o arquivo foi enfileirado com sucesso,
     não que ele já foi processado pelo consumidor.
+
+Pasta ignored:
+    Este job ignora qualquer pasta chamada ignored durante a varredura.
+    Arquivos que não atendem a regra do instrumento são movidos para ignored
+    no mesmo nível do arquivo, evitando nova varredura do mesmo item em execuções
+    futuras.
 
 Parâmetros:
     1 directory
@@ -68,43 +75,10 @@ Parâmetros:
 
     4 reprocess_all opcional
        0 ou 1
-       Quando 1, o job move todos os itens encontrados em pastas processed de volta
-       para o diretório pai correspondente e em seguida executa a varredura completa
-       novamente, reenfileirando tudo.
+       Quando 1, o job move todos os itens encontrados em pastas processed e ignored
+       de volta para o diretório pai correspondente e em seguida executa a varredura
+       completa novamente, reenfileirando e reclasificando tudo.
        Também pode ser controlado pela variável de ambiente INGESTOR_REPROCESS_ALL
-
-Uso manual:
-
-    Parâmetros do job:
-    1 diretório
-       Caminho raiz que será varrido recursivamente para descoberta de arquivos
-
-    2 instrument_name
-       Nome lógico do instrumento cujas regras de inclusão e exclusão serão aplicadas
-
-    3 debug opcional
-       Habilita logs detalhados
-       Valores aceitos 1 ou 0
-       Se omitido, pode ser controlado pela variável de ambiente INGESTOR_DEBUG
-
-    4 reprocess_all opcional
-       Reenfileira tudo a partir de processed
-       Valores aceitos 1 ou 0
-       Se omitido, pode ser controlado pela variável de ambiente INGESTOR_REPROCESS_ALL
-
-    SST com debug
-    python jobs\\run_job_read_local_files_and_insert_into_queue.py "C:\\...\\SST\\2022" SST 1
-
-    SST com debug e reprocess_all
-    python jobs\\run_job_read_local_files_and_insert_into_queue.py "C:\\...\\SST\\2022" SST 1 1
-
-    POEMAS sem debug e sem reprocess_all
-    python jobs\\run_job_read_local_files_and_insert_into_queue.py "C:\\...\\POEMAS\\2020" POEMAS
-
-Uso em cron:
-
-    */30 * * * * root python /app/run_job_read_local_files_and_insert_into_queue.py "/data/SST" SST 0 0 >> /var/log/cron.log 2>&1
-    */30 * * * * root python /app/run_job_read_local_files_and_insert_into_queue.py "/data/POEMAS" POEMAS 0 0 >> /var/log/cron.log 2>&1
 
 Requisitos:
     Python 3.7 ou superior
@@ -176,45 +150,64 @@ class run_job_read_local_files_and_insert_into_queue:
             counter += 1
 
     @staticmethod
-    def move_to_processed(file_path: str, debug: bool = False) -> None:
+    def _move_to_named_dir(file_path: str, target_dir_name: str, debug: bool = False) -> str:
         parent_dir = os.path.dirname(file_path)
-        processed_dir = os.path.join(parent_dir, PROCESSED_DIR_NAME)
-        os.makedirs(processed_dir, exist_ok=True)
+        target_dir = os.path.join(parent_dir, target_dir_name)
+        os.makedirs(target_dir, exist_ok=True)
 
         base_name = os.path.basename(file_path)
-        dest_path = run_job_read_local_files_and_insert_into_queue._unique_destination_path(processed_dir, base_name)
+        dest_path = run_job_read_local_files_and_insert_into_queue._unique_destination_path(target_dir, base_name)
 
         shutil.move(file_path, dest_path)
 
         run_job_read_local_files_and_insert_into_queue._debug_print(
-            debug, f"[DEBUG] Movido para processed: {dest_path}"
+            debug, f"[DEBUG] Movido para {target_dir_name}: {dest_path}"
+        )
+
+        return dest_path
+
+    @staticmethod
+    def move_to_processed(file_path: str, debug: bool = False) -> str:
+        return run_job_read_local_files_and_insert_into_queue._move_to_named_dir(
+            file_path=file_path,
+            target_dir_name=PROCESSED_DIR_NAME,
+            debug=debug,
         )
 
     @staticmethod
-    def restore_from_processed(directory: str, debug: bool = False) -> int:
+    def move_to_ignored(file_path: str, debug: bool = False) -> str:
+        return run_job_read_local_files_and_insert_into_queue._move_to_named_dir(
+            file_path=file_path,
+            target_dir_name=IGNORED_DIR_NAME,
+            debug=debug,
+        )
+
+    @staticmethod
+    def restore_from_named_dir(directory: str, target_dir_name: str, debug: bool = False) -> int:
         moved_count = 0
+        target_dir_name_lc = target_dir_name.lower()
 
         for root, dirs, _ in os.walk(directory, topdown=True):
-            processed_dir_actual = None
+            target_dir_actual = None
             for d in dirs:
-                if d.lower() == PROCESSED_DIR_NAME:
-                    processed_dir_actual = d
+                if d.lower() == target_dir_name_lc:
+                    target_dir_actual = d
                     break
 
-            if processed_dir_actual is None:
+            if target_dir_actual is None:
                 continue
 
-            processed_path = os.path.join(root, processed_dir_actual)
+            target_path = os.path.join(root, target_dir_actual)
 
             try:
-                entries = os.listdir(processed_path)
+                entries = os.listdir(target_path)
             except Exception as e:
-                print(f"[Erro] Falha ao listar {processed_path}: {e}")
-                dirs[:] = [d for d in dirs if d.lower() != PROCESSED_DIR_NAME]
+                print(f"[Erro] Falha ao listar {target_path}: {e}")
+                dirs[:] = [d for d in dirs if d.lower() != target_dir_name_lc]
                 continue
 
             for entry in entries:
-                src = os.path.join(processed_path, entry)
+                src = os.path.join(target_path, entry)
                 dest = run_job_read_local_files_and_insert_into_queue._unique_destination_path(root, entry)
 
                 try:
@@ -227,15 +220,15 @@ class run_job_read_local_files_and_insert_into_queue:
                     print(f"[Erro] Falha ao mover {src} para {dest}: {e}")
 
             try:
-                if not os.listdir(processed_path):
-                    os.rmdir(processed_path)
+                if not os.listdir(target_path):
+                    os.rmdir(target_path)
                     run_job_read_local_files_and_insert_into_queue._debug_print(
-                        debug, f"[DEBUG] Pasta removida por estar vazia: {processed_path}"
+                        debug, f"[DEBUG] Pasta removida por estar vazia: {target_path}"
                     )
             except Exception:
                 pass
 
-            dirs[:] = [d for d in dirs if d.lower() != PROCESSED_DIR_NAME]
+            dirs[:] = [d for d in dirs if d.lower() != target_dir_name_lc]
 
         return moved_count
 
@@ -316,27 +309,49 @@ class run_job_read_local_files_and_insert_into_queue:
             return
 
         if reprocess_all:
-            print(f"[{datetime.now()}] [Ingestor] Reprocess_all ativo, restaurando conteudo de pastas processed")
-            moved_back = run_job_read_local_files_and_insert_into_queue.restore_from_processed(directory, debug)
-            print(f"[{datetime.now()}] [Ingestor] Reprocess_all moveu {moved_back} itens de volta para os diretorios pais")
+            print(f"[{datetime.now()}] [Ingestor] Reprocess_all ativo, restaurando conteudo de pastas processed e ignored")
+            moved_processed = run_job_read_local_files_and_insert_into_queue.restore_from_named_dir(
+                directory=directory,
+                target_dir_name=PROCESSED_DIR_NAME,
+                debug=debug,
+            )
+            moved_ignored = run_job_read_local_files_and_insert_into_queue.restore_from_named_dir(
+                directory=directory,
+                target_dir_name=IGNORED_DIR_NAME,
+                debug=debug,
+            )
+            print(f"[{datetime.now()}] [Ingestor] Reprocess_all moveu {moved_processed} itens de processed")
+            print(f"[{datetime.now()}] [Ingestor] Reprocess_all moveu {moved_ignored} itens de ignored")
 
         inserted_count = 0
-        skipped_count = 0
+        invalid_count = 0
         error_count = 0
         moved_to_processed_count = 0
+        moved_to_ignored_count = 0
+
+        ignored_dir_lc = IGNORED_DIR_NAME.lower()
+        processed_dir_lc = PROCESSED_DIR_NAME.lower()
 
         for root, dirs, files in os.walk(directory, topdown=True):
-            dirs[:] = [d for d in dirs if d.lower() != PROCESSED_DIR_NAME]
+            dirs[:] = [d for d in dirs if d.lower() not in (processed_dir_lc, ignored_dir_lc)]
 
             for file in files:
                 file_path = os.path.join(root, file)
 
-                if not run_job_read_local_files_and_insert_into_queue.is_valid_file(
+                is_valid = run_job_read_local_files_and_insert_into_queue.is_valid_file(
                     file_path=file_path,
                     instrument_name=instrument_name_norm,
                     debug=debug,
-                ):
-                    skipped_count += 1
+                )
+
+                if not is_valid:
+                    invalid_count += 1
+                    try:
+                        run_job_read_local_files_and_insert_into_queue.move_to_ignored(file_path, debug)
+                        moved_to_ignored_count += 1
+                    except Exception as e:
+                        error_count += 1
+                        print(f"[Erro] Falha ao mover para ignored {file_path}: {e}")
                     continue
 
                 try:
@@ -353,7 +368,8 @@ class run_job_read_local_files_and_insert_into_queue:
 
         print(f"[{datetime.now()}] [Ingestor] Total inserido: {inserted_count} arquivos.")
         print(f"[{datetime.now()}] [Ingestor] Total movido para processed: {moved_to_processed_count} arquivos.")
-        print(f"[{datetime.now()}] [Ingestor] Total ignorado: {skipped_count} arquivos.")
+        print(f"[{datetime.now()}] [Ingestor] Total invalidos: {invalid_count} arquivos.")
+        print(f"[{datetime.now()}] [Ingestor] Total movido para ignored: {moved_to_ignored_count} arquivos.")
         print(f"[{datetime.now()}] [Ingestor] Total com erro: {error_count} arquivos.\n")
 
 
