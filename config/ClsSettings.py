@@ -6,8 +6,8 @@ import os
 class ClsSettings:
      # # Configurações do MongoDB ** LOCAL **
      MONGO_HOST = os.getenv('MONGO_HOST', 'localhost')
-     MONGO_PORT = int(os.getenv('MONGO_PORT', 27027)) #27031 STAND -27027 SHARDING
-     MONGO_DB_DATA = os.getenv('MONGO_DB_DATA', 'craam_data')
+     MONGO_PORT = int(os.getenv('MONGO_PORT', 27017)) #27031 STAND -27027 SHARDING
+     MONGO_DB_DATA = os.getenv('MONGO_DB_DATA', 'craam_master')
      MONGO_DB_PORTAL = os.getenv('MONGO_DB_PORTAL', 'macksundb')
      MONGO_USER = os.getenv('MONGO_USER', '')
      MONGO_PASSWORD = os.getenv('MONGO_PASSWORD', '')
