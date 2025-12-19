@@ -25,11 +25,12 @@ Job: run_job_read_local_files_and_insert_into_queue.py
 
 Descrição:
     Varre recursivamente um diretório, identifica arquivos válidos conforme regras
-    do instrumento informado, insere na fila via ClsFileQueueController e em seguida
-    move o arquivo para uma pasta processed no mesmo nível em que o arquivo estava.
+    do instrumento informado, move o arquivo para uma pasta 00_processed no mesmo nível
+    em que o arquivo estava e somente então insere na fila via ClsFileQueueController
+    usando o path já dentro de 00_processed.
 
     Arquivos inválidos conforme a regra do instrumento são movidos para uma pasta
-    ignored no mesmo nível em que o arquivo estava.
+    00_ignored no mesmo nível em que o arquivo estava.
 
 Decisão de projeto:
     Este job NÃO tenta inferir o instrumento a partir do path ou do nome do arquivo.
@@ -47,20 +48,22 @@ Importante para integradores:
     A exclusão explícita de .txt evita que arquivos auxiliares ou de log
     sejam enfileirados incorretamente.
 
-Pasta processed:
-    Este job ignora qualquer pasta chamada processed durante a varredura.
-    Após inserir um arquivo na fila com sucesso, ele é movido para processed
-    no mesmo nível do arquivo.
+Pasta 00_processed:
+    Este job ignora qualquer pasta chamada 00_processed durante a varredura.
+    O arquivo válido é movido para 00_processed e então enfileirado usando o path final.
 
     Atenção:
-    O movimento para processed indica que o arquivo foi enfileirado com sucesso,
+    O movimento para 00_processed indica que o arquivo foi enfileirado com sucesso,
     não que ele já foi processado pelo consumidor.
 
-Pasta ignored:
-    Este job ignora qualquer pasta chamada ignored durante a varredura.
-    Arquivos que não atendem a regra do instrumento são movidos para ignored
-    no mesmo nível do arquivo, evitando nova varredura do mesmo item em execuções
-    futuras.
+    Consistência com a fila:
+    O enqueue ocorre após o move. Em caso de falha no enqueue, o job tenta rollback
+    movendo o arquivo de volta para o diretório original.
+
+Pasta 00_ignored:
+    Este job ignora qualquer pasta chamada 00_ignored durante a varredura.
+    Arquivos que não atendem a regra do instrumento são movidos para 00_ignored,
+    evitando nova varredura do mesmo item em execuções futuras.
 
 Parâmetros:
     1 directory
@@ -75,7 +78,7 @@ Parâmetros:
 
     4 reprocess_all opcional
        0 ou 1
-       Quando 1, o job move todos os itens encontrados em pastas processed e ignored
+       Quando 1, o job move todos os itens encontrados em pastas 00_processed e 00_ignored
        de volta para o diretório pai correspondente e em seguida executa a varredura
        completa novamente, reenfileirando e reclasificando tudo.
        Também pode ser controlado pela variável de ambiente INGESTOR_REPROCESS_ALL
@@ -309,7 +312,7 @@ class run_job_read_local_files_and_insert_into_queue:
             return
 
         if reprocess_all:
-            print(f"[{datetime.now()}] [Ingestor] Reprocess_all ativo, restaurando conteudo de pastas processed e ignored")
+            print(f"[{datetime.now()}] [Ingestor] Reprocess_all ativo, restaurando conteudo de pastas 00_processed e 00_ignored")
             moved_processed = run_job_read_local_files_and_insert_into_queue.restore_from_named_dir(
                 directory=directory,
                 target_dir_name=PROCESSED_DIR_NAME,
@@ -320,8 +323,8 @@ class run_job_read_local_files_and_insert_into_queue:
                 target_dir_name=IGNORED_DIR_NAME,
                 debug=debug,
             )
-            print(f"[{datetime.now()}] [Ingestor] Reprocess_all moveu {moved_processed} itens de processed")
-            print(f"[{datetime.now()}] [Ingestor] Reprocess_all moveu {moved_ignored} itens de ignored")
+            print(f"[{datetime.now()}] [Ingestor] Reprocess_all moveu {moved_processed} itens de 00_processed")
+            print(f"[{datetime.now()}] [Ingestor] Reprocess_all moveu {moved_ignored} itens de 00_ignored")
 
         inserted_count = 0
         invalid_count = 0
@@ -351,25 +354,42 @@ class run_job_read_local_files_and_insert_into_queue:
                         moved_to_ignored_count += 1
                     except Exception as e:
                         error_count += 1
-                        print(f"[Erro] Falha ao mover para ignored {file_path}: {e}")
+                        print(f"[Erro] Falha ao mover para 00_ignored {file_path}: {e}")
                     continue
 
                 try:
-                    ClsFileQueueController.insert(file_path, instrument_name)
-                    inserted_count += 1
-                    print(f"[Ingestor] Inserido: {file_path}")
+                    original_parent_dir = os.path.dirname(file_path)
+                    moved_path = run_job_read_local_files_and_insert_into_queue.move_to_processed(file_path, debug)
 
-                    run_job_read_local_files_and_insert_into_queue.move_to_processed(file_path, debug)
-                    moved_to_processed_count += 1
+                    try:
+                        ClsFileQueueController.insert(moved_path, instrument_name_norm)
+                        inserted_count += 1
+                        moved_to_processed_count += 1
+                        print(f"[Ingestor] Inserido: {moved_path}")
+                    except Exception as e:
+                        base_name = os.path.basename(moved_path)
+                        rollback_path = run_job_read_local_files_and_insert_into_queue._unique_destination_path(
+                            original_parent_dir, base_name
+                        )
+                        try:
+                            shutil.move(moved_path, rollback_path)
+                            run_job_read_local_files_and_insert_into_queue._debug_print(
+                                debug, f"[DEBUG] Rollback efetuado, arquivo voltou para: {rollback_path}"
+                            )
+                        except Exception as rollback_error:
+                            run_job_read_local_files_and_insert_into_queue._debug_print(
+                                debug, f"[DEBUG] Falha no rollback: {rollback_error}"
+                            )
+                        raise e
 
                 except Exception as e:
                     error_count += 1
-                    print(f"[Erro] Falha ao inserir ou mover {file_path}: {e}")
+                    print(f"[Erro] Falha ao mover ou inserir {file_path}: {e}")
 
         print(f"[{datetime.now()}] [Ingestor] Total inserido: {inserted_count} arquivos.")
-        print(f"[{datetime.now()}] [Ingestor] Total movido para processed: {moved_to_processed_count} arquivos.")
+        print(f"[{datetime.now()}] [Ingestor] Total movido para 00_processed: {moved_to_processed_count} arquivos.")
         print(f"[{datetime.now()}] [Ingestor] Total invalidos: {invalid_count} arquivos.")
-        print(f"[{datetime.now()}] [Ingestor] Total movido para ignored: {moved_to_ignored_count} arquivos.")
+        print(f"[{datetime.now()}] [Ingestor] Total movido para 00_ignored: {moved_to_ignored_count} arquivos.")
         print(f"[{datetime.now()}] [Ingestor] Total com erro: {error_count} arquivos.\n")
 
 
