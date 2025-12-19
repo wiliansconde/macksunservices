@@ -77,12 +77,35 @@ Requisitos:
 class run_job_read_local_files_and_insert_into_queue:
     @staticmethod
     def is_valid_file(file_path: str) -> bool:
-        file_name = os.path.basename(file_path).lower()
-        return (
-            os.path.isfile(file_path)
-            and (file_name.startswith(('bi', 'rs', 'rf')) or file_name.endswith('.trk'))
-            and not file_name.endswith('.txt')
-        )
+        try:
+            file_name = os.path.basename(file_path).lower()
+
+            # Print para ver qual arquivo está sendo testado (pode gerar muito log se tiver milhares de arquivos)
+            # print(f"[DEBUG] Analisando: {file_name}")
+
+            # 1. Verifica se o caminho existe e é um arquivo
+            if not os.path.isfile(file_path):
+                # print(f"[DEBUG] IGNORADO (Não é arquivo/Diretório): {file_name}")
+                return False
+
+            # 2. Regra de EXCLUSÃO explícita
+            if file_name.endswith('.txt'):
+                print(f"[DEBUG] IGNORADO (Extensão .txt): {file_name}")
+                return False
+
+            # 3. Regra de INCLUSÃO (Prefixos ou Sulfixo .trk)
+            has_valid_pattern = (file_name.startswith(('bi', 'rs', 'rf')) or file_name.endswith('.trk'))
+
+            if has_valid_pattern:
+                print(f"[DEBUG] >>> ARQUIVO VÁLIDO: {file_name}")
+                return True
+            else:
+                print(f"[DEBUG] IGNORADO (Padrão de nome inválido): {file_name}")
+                return False
+
+        except Exception as e:
+            print(f"[ERRO] Erro ao validar {file_path}: {e}")
+            return False
 
     @staticmethod
     def run(directory: str) -> None:
