@@ -3,7 +3,7 @@ from services.ClsFileQueueService import ClsFileQueueService
 
 class ClsFileQueueController:
     @staticmethod
-    def insert(file_path: str):
+    def insert(file_path: str, instrument_name: str):
         ClsFileQueueService.insert(file_path)
 
     @staticmethod

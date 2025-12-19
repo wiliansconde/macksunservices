@@ -61,7 +61,7 @@ JUMP_USER = "wilians.souza"
 JUMP_HOST = "login.linea.org.br"
 TARGET_HOST = "srvcraam"
 REMOTE_ROOT_PATH = "/mnt/cl/prj/craam/instrument_native_raw"
-SYNC_FOLDER_NAME = "00_ENVIADOS_LINEA"
+SYNC_FOLDER_NAME = "00_enviado_linea"
 
 
 # ==============================================================================

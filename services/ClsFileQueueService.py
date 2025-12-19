@@ -19,7 +19,7 @@ from utils.ZipHelper import ZipHelper
 
 class ClsFileQueueService:
     @staticmethod
-    def insert(file_full_path: str):
+    def insert(file_full_path: str, instrument_name: str):
         CLSConsolePrint.debug('iniciando insert')
         try:
             file_path = ClsFormat.format_file_path(file_full_path)
@@ -39,7 +39,8 @@ class ClsFileQueueService:
                 file_lines_qty=0,
                 status=ProcessStatus.PENDING,
                 created_on=ClsGet.current_time(),
-                created_by='system_initial_load'
+                created_by='system_initial_load',
+                instrument_name=instrument_name
             )
 
             r = ClsFileIngestionQueueRepository.insert(file_queue_vo)
