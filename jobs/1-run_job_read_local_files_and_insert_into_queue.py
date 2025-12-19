@@ -1,11 +1,14 @@
+
 import os
 import sys
 import traceback
 from datetime import datetime
+from dataclasses import dataclass
+from typing import Dict, Tuple, Optional
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from controllers.queue.ClsFileQueueController import ClsFileQueueController
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 """
@@ -13,133 +16,246 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 *******************  RODE ESSE ANTES DO PROCESS_QUEUE ****************************
 **********************************************************************************
 
-Job: 1-run_job_read_local_files_and_insert_into_queue.py
+Job: run_job_read_local_files_and_insert_into_queue.py
 
 
 Descrição:
-    Varre recursivamente um diretório, identifica arquivos válidos (bi/rs/rf/*.trk),
-    e insere na fila de processamento via ClsFileQueueController.
+    Varre recursivamente um diretório, identifica arquivos válidos conforme regras
+    do instrumento informado, e insere na fila de processamento via ClsFileQueueController.
 
-Recomendação de uso:
-    ➤ Cada diretório que deve ser varrido precisa ter uma chamada independente deste script.
-    ➤ Ideal para configurar um agendamento (cron ou task scheduler) por **diretório monitorado**.
+Decisão de projeto:
+    Este job NÃO tenta inferir o instrumento a partir do path ou do nome do arquivo.
+    O instrumento deve ser informado explicitamente como parâmetro de execução.
+    Recomenda se fortemente um agendamento dedicado por instrumento e por diretório.
+
+Importante para integradores:
+    As regras de inclusão devem ser sempre o critério principal.
+    Regras de exclusão existem apenas como proteção adicional quando a inclusão
+    é propositalmente ampla.
+
+    Exemplo clássico:
+    SST inclui arquivos que começam com bi rs rf.
+    Nesse caso é possível existir bi.txt rs.txt rf.txt no diretório.
+    A exclusão explícita de .txt evita que arquivos auxiliares ou de log
+    sejam enfileirados incorretamente.
+
+    Se a regra de inclusão for estrita por extensão, a exclusão pode ser redundante,
+    mas é mantida aqui como mecanismo defensivo.
+
+Parâmetros:
+    1 directory
+       Diretório raiz a ser varrido recursivamente
+
+    2 instrument_name
+       Nome lógico do instrumento, exemplo SST POEMAS FAST
+
+    3 debug opcional
+       0 ou 1
+       Também pode ser controlado por variável de ambiente INGESTOR_DEBUG
 
 Uso manual:
-    No command DOS:
-    1. Navegue até a raiz do projeto:
-       cd C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Craam_Loader
 
-
-       SST
-       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2022\"
+    Parâmetros do job:
+    1 diretório
+       Caminho raiz que será varrido recursivamente para descoberta de arquivos
     
-    2. Execute com:
-       POEMAS
-       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\POEMAS\2020"
-       
-       SST
-       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2022\M10\M10"
-       
-       
-       FAST
-       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\DadosSST\2016\M01\D01\fast"
+    2 instrument_name
+       Nome lógico do instrumento cujas regras de inclusão e exclusão serão aplicadas
+    
+    3 debug opcional
+       Habilita logs detalhados
+       Valores aceitos 1 ou 0
+       Se omitido, pode ser controlado pela variável de ambiente INGESTOR_DEBUG
 
-       INTG
-       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\DadosSST\2016\M01\D01\intg"
+    SST
+    python -m jobs.run_job_read_local_files_and_insert_into_queue "C:\...\SST\2022" SST 1
 
-       BI FILES
-       python -m jobs.1-run_job_read_local_files_and_insert_into_queue "C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\DadosSST\2016\M01\D01\instr"
+    POEMAS
+    python -m jobs.run_job_read_local_files_and_insert_into_queue "C:\...\POEMAS\2020" POEMAS 1
 
-    Main.read_local_files_and_insert_into_queue(
-        r'C:\Y\WConde\Estudo\DoutoradoMack\Disciplinas\_PesquisaFinal\Dados\_FINAL\SST\2002\2002\M02\D18\')
+Uso em cron:
 
-       
-       
-       
-       
-Uso em cron (dentro de container):
-    */30 * * * * root python /app/1-run_job_read_local_files_and_insert_into_queue.py "C:/w/y/POEMAS" >> /var/log/cron.log 2>&1
-    */30 * * * * root python /app/1-run_job_read_local_files_and_insert_into_queue.py "C:/w/y/SST" >> /var/log/cron.log 2>&1
-
-Critérios de arquivo válido:
-    - Começa com: bi, rs ou rf
-    - OU termina com: .trk ou zip
-
-Saída:
-    Log com arquivos inseridos na fila e contagem final.
+    */30 * * * * root python /app/run_job_read_local_files_and_insert_into_queue.py "/data/SST" SST 0 >> /var/log/cron.log 2>&1
+    */30 * * * * root python /app/run_job_read_local_files_and_insert_into_queue.py "/data/POEMAS" POEMAS 0 >> /var/log/cron.log 2>&1
 
 Requisitos:
-    - Python 3.7+
-    - ClsFileQueueController acessível em controllers.queue
+    Python 3.7 ou superior
+    ClsFileQueueController acessível em controllers.queue
 """
+
+
+@dataclass(frozen=True)
+class InstrumentRule:
+    name: str
+
+    # Critérios de inclusão
+    include_prefixes: Tuple[str, ...] = ()
+    include_suffixes: Tuple[str, ...] = ()
+    include_extensions: Tuple[str, ...] = ()
+
+    # Critérios de exclusão
+    # Estes critérios existem apenas como salvaguarda quando a inclusão é ampla.
+    # Exemplo: incluir tudo que começa com "bi" pode capturar "bi.txt".
+    # A exclusão explícita evita enfileirar arquivos auxiliares ou de log.
+    exclude_extensions: Tuple[str, ...] = (".txt",)
+    exclude_suffixes: Tuple[str, ...] = ()
+
+
+INSTRUMENT_RULES: Dict[str, InstrumentRule] = {
+    "SST": InstrumentRule(
+        name="SST",
+        include_prefixes=("bi", "rs", "rf"),
+        exclude_extensions=(".txt",),
+    ),
+    "POEMAS": InstrumentRule(
+        name="POEMAS",
+        include_suffixes=(".trk",),
+        exclude_extensions=(".txt",),
+    ),
+    "HALPHA_SAMPLE": InstrumentRule(
+        name="CCCC",
+        include_extensions=(".fits", ".fit"),
+        exclude_extensions=(".txt",),
+    ),
+}
 
 
 class run_job_read_local_files_and_insert_into_queue:
     @staticmethod
-    def is_valid_file(file_path: str) -> bool:
+    def _to_bool(value: Optional[str]) -> bool:
+        if value is None:
+            return False
+        return str(value).strip().lower() in ("1", "true", "yes", "y", "on")
+
+    @staticmethod
+    def _debug_print(debug: bool, message: str) -> None:
+        if debug:
+            print(message)
+
+    @staticmethod
+    def is_valid_file(file_path: str, instrument_name: str, debug: bool = False) -> bool:
         try:
-            file_name = os.path.basename(file_path).lower()
-
-            # Print para ver qual arquivo está sendo testado (pode gerar muito log se tiver milhares de arquivos)
-            # print(f"[DEBUG] Analisando: {file_name}")
-
-            # 1. Verifica se o caminho existe e é um arquivo
             if not os.path.isfile(file_path):
-                # print(f"[DEBUG] IGNORADO (Não é arquivo/Diretório): {file_name}")
                 return False
 
-            # 2. Regra de EXCLUSÃO explícita
-            if file_name.endswith('.txt'):
-                print(f"[DEBUG] IGNORADO (Extensão .txt): {file_name}")
+            instrument_name_norm = instrument_name.strip().upper()
+            rule = INSTRUMENT_RULES.get(instrument_name_norm)
+
+            if rule is None:
+                print(f"[ERRO] Instrumento desconhecido: {instrument_name_norm}")
                 return False
 
-            # 3. Regra de INCLUSÃO (Prefixos ou Sulfixo .trk)
-            has_valid_pattern = (file_name.startswith(('bi', 'rs', 'rf')) or file_name.endswith('.trk'))
+            file_name = os.path.basename(file_path).lower()
+            _, ext = os.path.splitext(file_name)
+            ext = ext.lower()
 
-            if has_valid_pattern:
-                print(f"[DEBUG] >>> ARQUIVO VÁLIDO: {file_name}")
+            run_job_read_local_files_and_insert_into_queue._debug_print(
+                debug, f"[DEBUG] Analisando ({instrument_name_norm}): {file_name}"
+            )
+
+            if ext in rule.exclude_extensions:
+                run_job_read_local_files_and_insert_into_queue._debug_print(
+                    debug, f"[DEBUG] IGNORADO ({instrument_name_norm}, extensao excluida): {file_name}"
+                )
+                return False
+
+            if rule.exclude_suffixes and any(file_name.endswith(sfx) for sfx in rule.exclude_suffixes):
+                run_job_read_local_files_and_insert_into_queue._debug_print(
+                    debug, f"[DEBUG] IGNORADO ({instrument_name_norm}, sufixo excluido): {file_name}"
+                )
+                return False
+
+            matched = False
+
+            if rule.include_prefixes and file_name.startswith(rule.include_prefixes):
+                matched = True
+
+            if rule.include_suffixes and any(file_name.endswith(sfx) for sfx in rule.include_suffixes):
+                matched = True
+
+            if rule.include_extensions and ext in rule.include_extensions:
+                matched = True
+
+            if matched:
+                run_job_read_local_files_and_insert_into_queue._debug_print(
+                    debug, f"[DEBUG] ARQUIVO VALIDO ({instrument_name_norm}): {file_name}"
+                )
                 return True
-            else:
-                print(f"[DEBUG] IGNORADO (Padrão de nome inválido): {file_name}")
-                return False
+
+            run_job_read_local_files_and_insert_into_queue._debug_print(
+                debug, f"[DEBUG] IGNORADO ({instrument_name_norm}, sem correspondencia): {file_name}"
+            )
+            return False
 
         except Exception as e:
             print(f"[ERRO] Erro ao validar {file_path}: {e}")
             return False
 
     @staticmethod
-    def run(directory: str) -> None:
-        print(f"[{datetime.now()}] [Ingestor] Iniciando varredura: {directory}")
+    def run(directory: str, instrument_name: str, debug: bool = False) -> None:
+        instrument_name_norm = instrument_name.strip().upper()
+        print(
+            f"[{datetime.now()}] [Ingestor] Iniciando varredura: {directory} "
+            f"| Instrumento: {instrument_name_norm} | Debug: {int(debug)}"
+        )
+
+        if instrument_name_norm not in INSTRUMENT_RULES:
+            print(f"[Erro] Instrumento invalido: {instrument_name_norm}")
+            print(f"[Erro] Instrumentos validos: {', '.join(sorted(INSTRUMENT_RULES.keys()))}")
+            return
 
         if not os.path.exists(directory):
-            print(f"[Erro] Diretório não encontrado: {directory}")
+            print(f"[Erro] Diretorio nao encontrado: {directory}")
             return
 
         inserted_count = 0
+        skipped_count = 0
+        error_count = 0
+
         for root, _, files in os.walk(directory):
             for file in files:
                 file_path = os.path.join(root, file)
-                if run_job_read_local_files_and_insert_into_queue.is_valid_file(file_path):
-                    try:
-                        ClsFileQueueController.insert(file_path)
-                        inserted_count += 1
-                        print(f"[Ingestor] Inserido: {file_path}")
-                    except Exception as e:
-                        print(f"[Erro] Falha ao inserir {file_path}: {e}")
 
-        print(f"[{datetime.now()}] [Ingestor] Total inserido: {inserted_count} arquivos.\n")
+                if not run_job_read_local_files_and_insert_into_queue.is_valid_file(
+                    file_path=file_path,
+                    instrument_name=instrument_name_norm,
+                    debug=debug,
+                ):
+                    skipped_count += 1
+                    continue
+
+                try:
+                    ClsFileQueueController.insert(file_path)
+                    inserted_count += 1
+                    print(f"[Ingestor] Inserido: {file_path}")
+                except Exception as e:
+                    error_count += 1
+                    print(f"[Erro] Falha ao inserir {file_path}: {e}")
+
+        print(f"[{datetime.now()}] [Ingestor] Total inserido: {inserted_count} arquivos.")
+        print(f"[{datetime.now()}] [Ingestor] Total ignorado: {skipped_count} arquivos.")
+        print(f"[{datetime.now()}] [Ingestor] Total com erro: {error_count} arquivos.\n")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Uso: python 1-run_job_read_local_files_and_insert_into_queue.py <diretório>")
+    if len(sys.argv) not in (3, 4):
+        print("Uso: python run_job_read_local_files_and_insert_into_queue.py <diretorio> <instrument_name> <debug opcional 0 ou 1>")
         sys.exit(1)
 
     directory = sys.argv[1]
+    instrument_name = sys.argv[2]
+
+    debug_env = os.getenv("INGESTOR_DEBUG", "0")
+    debug_arg = sys.argv[3] if len(sys.argv) == 4 else None
+
+    debug = (
+        run_job_read_local_files_and_insert_into_queue._to_bool(debug_arg)
+        or run_job_read_local_files_and_insert_into_queue._to_bool(debug_env)
+    )
 
     try:
-        run_job_read_local_files_and_insert_into_queue.run(directory)
+        run_job_read_local_files_and_insert_into_queue.run(directory, instrument_name, debug)
     except Exception:
-        print("[Erro] Exceção inesperada:")
+        print("[Erro] Excecao inesperada:")
         traceback.print_exc()
         sys.exit(2)
