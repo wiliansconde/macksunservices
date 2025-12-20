@@ -6,8 +6,8 @@ import os
 class ClsSettings:
      # # Configurações do MongoDB ** LOCAL **
      MONGO_HOST = os.getenv('MONGO_HOST', 'localhost')
-     MONGO_PORT = int(os.getenv('MONGO_PORT', 27017)) #27031 STAND -27027 SHARDING
-     MONGO_DB_DATA = os.getenv('MONGO_DB_DATA', 'craam_master')
+     MONGO_PORT = int(os.getenv('MONGO_PORT', 27027)) #27031 STAND -27027 SHARDING - LINEA: 27017
+     MONGO_DB_MASTER = os.getenv('MONGO_DB_DATA', 'craam_master')
      MONGO_DB_PORTAL = os.getenv('MONGO_DB_PORTAL', 'macksundb')
      MONGO_USER = os.getenv('MONGO_USER', '')
      MONGO_PASSWORD = os.getenv('MONGO_PASSWORD', '')
@@ -21,12 +21,7 @@ class ClsSettings:
      MONGO_AZURE_USER = os.getenv('MONGO_AZURE_USER', 'usrmongosrv')
      MONGO_AZURE_PASSWORD = os.getenv('MONGO_AZURE_PASSWORD', 'Teste.100')
 
-    # ZENODO
-     ZENODO_TOKEN = "vN0jaQTdNwmfhs4lg6abmdUwssTLnl6eSZpuKSVkYMSfyyrcfEJGmzEyqCuJ"
-     ZENODO_BASE_URL = "https://zenodo.org/api"
-     ZENODO_COMMUNITY = "conde_set"
-     ZENODO_LICENSE = "cc-by-4.0"
-     
+
      AZURE_BLOB_CONNECTION_STRING = os.getenv(
          'AZURE_BLOB_CONNECTION_STRING',
          'DefaultEndpointsProtocol=https;AccountName=arm2macksun;AccountKey=LIMQNROm7U2ZXiWRs/cCWdeRwhXf0BO4XkPO6eWwBk02SS8CXqPrD04zsOes3vFtrQqjAof3W5gH+AStxMBJOg==;EndpointSuffix=core.windows.net'
@@ -41,9 +36,19 @@ class ClsSettings:
 
      @staticmethod
      def get_mongo_data_uri():
+         uri = ""
          if ClsSettings.MONGO_USER and ClsSettings.MONGO_PASSWORD:
-             return f"mongodb://{ClsSettings.MONGO_USER}:{ClsSettings.MONGO_PASSWORD}@{ClsSettings.MONGO_HOST}:{ClsSettings.MONGO_PORT}/{ClsSettings.MONGO_DB_DATA}"
-         return f"mongodb://{ClsSettings.MONGO_HOST}:{ClsSettings.MONGO_PORT}/{ClsSettings.MONGO_DB_DATA}"
+             uri = f"mongodb://{ClsSettings.MONGO_USER}:{ClsSettings.MONGO_PASSWORD}@{ClsSettings.MONGO_HOST}:{ClsSettings.MONGO_PORT}/{ClsSettings.MONGO_DB_MASTER}"
+         else:
+             uri = f"mongodb://{ClsSettings.MONGO_HOST}:{ClsSettings.MONGO_PORT}/{ClsSettings.MONGO_DB_MASTER}"
+
+         print("[DEBUG][Settings] get_mongo_data_uri")
+         print(f"[DEBUG][Settings] MONGO_HOST={ClsSettings.MONGO_HOST}")
+         print(f"[DEBUG][Settings] MONGO_PORT={ClsSettings.MONGO_PORT}")
+         print(f"[DEBUG][Settings] MONGO_DB_MASTER={ClsSettings.MONGO_DB_MASTER}")
+         print(f"[DEBUG][Settings] uri={uri}")
+
+         return uri
 
      @staticmethod
      def get_mongo_portal_uri():

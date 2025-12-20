@@ -10,7 +10,11 @@ class ClsDataAvailabilityStatsService:
 
     @staticmethod
     def recalculate_for_day(instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum, target_date: datetime, collection_name: str):
-        collection = ClsMongoHelper.get_data_collection(collection_name)
+        #collection = ClsMongoHelper.get_data_collection(collection_name)
+        collection = ClsMongoHelper.get_instrument_collection(
+            collection_name=collection_name,
+            instrument_name=instrument.value,
+        )
 
         start_day = datetime(target_date.year, target_date.month, target_date.day)
         end_day = start_day + timedelta(days=1)

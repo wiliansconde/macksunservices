@@ -3,7 +3,7 @@ from typing import List
 
 from enums.ClsInstrumentEnum import ClsInstrumentEnum
 from enums.ClsResolutionEnum import ClsResolutionEnum
-from services.ClsData_partition_resolver_service import ClsDataPartitionResolverService
+from services.ClsDataPartitionResolverService import ClsDataPartitionResolverService
 
 
 class ClsPartitionMapController:

@@ -1,36 +1,26 @@
 from pymongo import MongoClient
 
 from config.ClsSettings import ClsSettings
+from repositories.base_repositories.ClsMongoClientProvider import ClsMongoClientProvider
 
 
 class ClsConnection:
     @staticmethod
-    def get_mongo_data_client():
-        # uri='mongodb://localhost:27018/'
-        uri = ClsSettings.get_mongo_data_uri()
-        return MongoClient(uri)
-
     @staticmethod
-    def get_mongo_portal_client():
-        # uri='mongodb://localhost:27018/'
-        uri = ClsSettings.get_mongo_portal_uri()
+    def get_mongo_data_client():
+        uri = ClsSettings.get_mongo_data_uri()
+        print("[DEBUG][Connection] criando client do master")
         return MongoClient(uri)
 
     @staticmethod
     def get_mongo_data_db_name():
-        return ClsSettings.MONGO_DB_DATA
+        print(f"[DEBUG][Connection] master db_name={ClsSettings.MONGO_DB_MASTER}")
+        return ClsSettings.MONGO_DB_MASTER
+    @staticmethod
+    def get_mongo_portal_client() -> MongoClient:
+        return ClsMongoClientProvider.get_master_client()
+
 
     @staticmethod
-    def get_mongo_portal_db_name():
+    def get_mongo_portal_db_name() -> str:
         return ClsSettings.MONGO_DB_PORTAL
-
-    # ---------------------
-    # Cloud (Azure Cosmos DB)
-    # ---------------------
-    @staticmethod
-    def get_mongo_cloud_client():
-        return MongoClient(ClsSettings.get_mongo_azure_uri())
-
-    @staticmethod
-    def get_mongo_cloud_db_name():
-        return ClsSettings.MONGO_AZURE_DB

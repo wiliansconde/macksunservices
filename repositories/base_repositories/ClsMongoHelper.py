@@ -1,121 +1,95 @@
-import time
+# src/repositories/base_repositories/ClsMongoHelper.py
+
+from typing import List, Optional
 from datetime import datetime
-from typing import List
-from pymongo import errors, ASCENDING
+import time
+
+from pymongo import ASCENDING, errors
 from pymongo.errors import PyMongoError
 
-from config.ClsSettings import ClsSettings
-from repositories.base_repositories.ClsConnection import ClsConnection
+from enums.ClsMongoScopeEnum import ClsMongoScopeEnum
+from repositories.base_repositories.ClsMongoFactory import ClsMongoFactory
 from repositories.base_repositories.ClsProcessingResult import ClsProcessingResult
 
 
 class ClsMongoHelper:
+    # =========================
+    # Collections helpers
+    # =========================
     @staticmethod
-    def get_collection(collection_name):
-        client = ClsConnection.get_mongo_data_client()
-        db_name = ClsConnection.get_mongo_data_db_name()
-        db = client[db_name]
-        return db[collection_name]
+    def get_collection(collection_name: str):
+        # MASTER
+        return ClsMongoFactory.get_collection(
+            collection_name=collection_name,
+            scope=ClsMongoScopeEnum.MASTER,
+        )
 
     @staticmethod
-    def get_portal_collection(collection_name):
-        client = ClsConnection.get_mongo_portal_client()
-        db_name = ClsConnection.get_mongo_portal_db_name()
-        db = client[db_name]
-        return db[collection_name]
+    def get_portal_collection(collection_name: str):
+        # PORTAL
+        return ClsMongoFactory.get_collection(
+            collection_name=collection_name,
+            scope=ClsMongoScopeEnum.PORTAL,
+        )
 
     @staticmethod
-    def get_azure_portal_collection(collection_name):
-        client = ClsConnection.get_mongo_cloud_client() # ClsConnection.get_mongo_portal_client()
-        db_name = ClsConnection.get_mongo_portal_db_name()
-        db = client[db_name]
-        return db[collection_name]
+    def get_instrument_collection(collection_name: str, instrument_name: str):
+        # INSTRUMENT
+        return ClsMongoFactory.get_collection(
+            collection_name=collection_name,
+            scope=ClsMongoScopeEnum.INSTRUMENT,
+            instrument_name=instrument_name,
+        )
+
+    # =========================
+    # DB client helpers
+    # =========================
+    @staticmethod
+    def get_mongo_client_master():
+        return ClsMongoFactory.get_db(scope=ClsMongoScopeEnum.MASTER)
 
     @staticmethod
-    def get_mongo_client():
-        return ClsConnection.get_mongo_data_client()
+    def get_mongo_client_portal():
+        return ClsMongoFactory.get_db(scope=ClsMongoScopeEnum.PORTAL)
 
     @staticmethod
-    def insert_vo_to_mongodb(vo, collection_name):
-        client = ClsConnection.get_mongo_data_client()
-        db = client[ClsConnection.get_mongo_data_db_name()]
-        collection = db[collection_name]
+    def get_mongo_client_instrument(instrument_name: str):
+        return ClsMongoFactory.get_db(scope=ClsMongoScopeEnum.INSTRUMENT, instrument_name=instrument_name)
+
+    # =========================
+    # Inserts
+    # =========================
+    @staticmethod
+    def insert_vo_to_mongodb(vo, collection_name: str, instrument_name: Optional[str] = None) -> bool:
+        """
+        Metodo legado. Insere 1 VO se ainda nao existir (quando o chamador fizer essa checagem).
+        Se instrument_name for informado grava no DB do instrumento, senao grava no master.
+        """
+        if instrument_name:
+            collection = ClsMongoHelper.get_instrument_collection(collection_name, instrument_name)
+        else:
+            collection = ClsMongoHelper.get_collection(collection_name)
+
         record_dict = vo.to_dict()
-
         collection.insert_one(record_dict)
+        return True
 
     @staticmethod
-    def get_data_collection(collection_name: str):
-        client = ClsConnection.get_mongo_data_client()
-        db = client[ClsSettings.MONGO_DB_DATA]
-        return db[collection_name]
-
-    @staticmethod
-    def find_records_by_time_range(mongo_collection_name, date_to_generate_file, limit=10000000):
-
+    def insert_vos_to_mongodb(
+        vos: List,
+        collection_name: str,
+        file_path: str,
+        instrument_name: Optional[str] = None
+    ) -> ClsProcessingResult:
         """
-        Busca documentos que correspondem ao intervalo especificado de tempo, com um limite opcional.
-        O intervalo é definido por UTC_TIME_YEAR, UTC_TIME_MONTH, UTC_TIME_DAY e UTC_TIME_HOUR.
+        Metodo principal usado pelos repositories de dados.
+        Se instrument_name vier preenchido, grava no DB do instrumento.
+        Caso contrario, grava no master.
         """
-        # Define o início do dia (00:00:00)
-        start_time = datetime.combine(date_to_generate_file, datetime.min.time())
-
-        # Define o fim do dia (23:59:59)
-        end_time = datetime.combine(date_to_generate_file, datetime.max.time())
-
-        query = {
-            "UTC_TIME": {
-                "$gte": start_time,
-                "$lte": end_time
-            }
-        }
-
-        # Executa a consulta com o limite de documentos
-        collection = ClsMongoHelper.get_data_collection(mongo_collection_name)
-
-        start = time.time()
-        records = list(collection.find(query).sort("UTC_TIME", ASCENDING))  # .limit(limit)
-        duration = time.time() - start
-
-        print(f"[QUERY] {len(records)} documentos encontrados em {duration:.2f} segundos.")
-        return records
-
-    @staticmethod
-    def find_records_by_time_range_sst_type(mongo_collection_name, date_to_generate_file, sst_type):
-
-        """
-        Busca documentos que correspondem ao intervalo especificado de tempo, com um limite opcional.
-        O intervalo é definido por UTC_TIME_YEAR, UTC_TIME_MONTH, UTC_TIME_DAY e UTC_TIME_HOUR.
-        """
-        # Define o início do dia (00:00:00)
-        start_time = datetime.combine(date_to_generate_file, datetime.min.time())
-
-        # Define o fim do dia (23:59:59)
-        end_time = datetime.combine(date_to_generate_file, datetime.max.time())
-
-        query = {
-            "UTC_TIME": {
-                "$gte": start_time,
-                "$lte": end_time
-            },
-            "SSTType": sst_type  # "FAST" ou "INTG"
-        }
-
-        # Executa a consulta com o limite de documentos
-        collection = ClsMongoHelper.get_data_collection(mongo_collection_name)
-
-        start = time.time()
-        records = list(collection.find(query).sort("UTC_TIME", ASCENDING))  # .limit(limit)
-        duration = time.time() - start
-
-        print(f"[QUERY] {len(records)} documentos encontrados em {duration:.2f} segundos.")
-        return records
-
-    @staticmethod
-    def insert_vos_to_mongodb(vos: List, collection_name: str, file_path: str) -> ClsProcessingResult:
-        client = ClsConnection.get_mongo_data_client()
-        db = client[ClsConnection.get_mongo_data_db_name()]
-        collection = db[collection_name]
+        if instrument_name:
+            collection = ClsMongoHelper.get_instrument_collection(collection_name, instrument_name)
+        else:
+            collection = ClsMongoHelper.get_collection(collection_name)
 
         records = [vo.to_dict() for vo in vos]
 
@@ -124,38 +98,88 @@ class ClsMongoHelper:
         failed_count = 0
 
         try:
-            # Inserir todos os documentos únicos de uma vez
             result = collection.insert_many(records, ordered=False)
             inserted_count = len(result.inserted_ids)
-            print(f"Registros inseridos com sucesso na coleção {collection_name}!")
         except errors.BulkWriteError as bwe:
-            # Tratar erros de escrita em massa
-            write_errors = bwe.details['writeErrors']
+            write_errors = bwe.details.get("writeErrors", [])
             for error in write_errors:
-                if error['code'] == 11000:  # Código de erro para duplicatas
+                if error.get("code") == 11000:
                     duplicate_count += 1
-                    print(f"Erro de duplicação na coleção {collection_name}: {error['errmsg']}")
                 else:
                     failed_count += 1
-                    print(f"Erro desconhecido na coleção {collection_name}: {error['errmsg']}")
 
-            # Calculando os registros inseridos e falhados
             inserted_count = len(records) - duplicate_count - failed_count
-            failed_count = failed_count
-
-        except Exception as e:
-            print(f"Erro ao inserir registros na coleção {collection_name}: {str(e)}")
+        except Exception:
             failed_count = len(records)
 
         return ClsProcessingResult(inserted_count, duplicate_count, failed_count, file_path)
 
+    # =========================
+    # Queries
+    # =========================
     @staticmethod
-    def delete_records(file_path, collection_name):
-        collection = ClsMongoHelper.get_collection(collection_name)
+    def find_records_by_time_range(
+        mongo_collection_name: str,
+        date_to_generate_file: datetime,
+        instrument_name: str,
+        limit: int = 10000000
+    ):
+        start_time = datetime.combine(date_to_generate_file, datetime.min.time())
+        end_time = datetime.combine(date_to_generate_file, datetime.max.time())
+
+        query = {"UTC_TIME": {"$gte": start_time, "$lte": end_time}}
+
+        collection = ClsMongoHelper.get_instrument_collection(mongo_collection_name, instrument_name)
+
+        start = time.time()
+        cursor = collection.find(query).sort("UTC_TIME", ASCENDING)
+        if limit and limit > 0:
+            cursor = cursor.limit(limit)
+
+        records = list(cursor)
+        duration = time.time() - start
+
+        print(f"[QUERY] {len(records)} documentos encontrados em {duration:.2f} segundos.")
+        return records
+
+    @staticmethod
+    def find_records_by_time_range_sst_type(
+        mongo_collection_name: str,
+        date_to_generate_file: datetime,
+        instrument_name: str,
+        sst_type: str,
+        limit: int = 10000000
+    ):
+        start_time = datetime.combine(date_to_generate_file, datetime.min.time())
+        end_time = datetime.combine(date_to_generate_file, datetime.max.time())
+
+        query = {
+            "UTC_TIME": {"$gte": start_time, "$lte": end_time},
+            "SSTType": sst_type
+        }
+
+        collection = ClsMongoHelper.get_instrument_collection(mongo_collection_name, instrument_name)
+
+        start = time.time()
+        cursor = collection.find(query).sort("UTC_TIME", ASCENDING)
+        if limit and limit > 0:
+            cursor = cursor.limit(limit)
+
+        records = list(cursor)
+        duration = time.time() - start
+
+        print(f"[QUERY] {len(records)} documentos encontrados em {duration:.2f} segundos.")
+        return records
+
+    # =========================
+    # Deletes
+    # =========================
+    @staticmethod
+    def delete_records(file_path: str, collection_name: str, instrument_name: str):
+        collection = ClsMongoHelper.get_instrument_collection(collection_name, instrument_name)
         try:
             result = collection.delete_many({"FILEPATH": file_path})
             return result.deleted_count
-
         except PyMongoError as e:
-            print(f"Erro ao deletar registros da coleção {collection_name} para o arquivo {file_path}: {str(e)}")
+            print(f"Erro ao deletar registros da colecao {collection_name} para o arquivo {file_path}: {str(e)}")
             raise

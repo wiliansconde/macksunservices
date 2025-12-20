@@ -32,7 +32,7 @@ Uso Manual:
 
     2. Execute definindo o caminho e o instrumento:
        POEMAS (Raiz completa)
-       python -m jobs.run_job_upload_instrument_native_raw_to_linea --path "X:\DADOS_POEMAS_SST\Dados\_FINAL\POEMAS" --instrument "poemas"
+       python -m jobs.run_job_upload_instrument_native_raw_to_linea --path "X:\DADOS_POEMAS_SST\Dados\_FINAL\POEMAS" --instrument "poemas" --force
 
        POEMAS (Mês específico)
        python -m jobs.run_job_upload_instrument_native_raw_to_linea --path "X:\DADOS_POEMAS_SST\Dados\_FINAL\POEMAS\2012\M01" --instrument "poemas" --force

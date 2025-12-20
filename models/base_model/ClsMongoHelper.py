@@ -1,12 +1,10 @@
 from datetime import datetime
 import re
-
-from Common.ClsFormat import ClsFormat
+from idlelib.iomenu import errors
 from typing import List
-from MongoDB.ClsConnection import ClsConnection
-from pymongo import errors
 
-from MongoDB.ClsProcessingResult import ClsProcessingResult
+from models.base_model.ClsProcessingResult import ClsProcessingResult
+from repositories.base_repositories.ClsConnection import ClsConnection
 
 
 class ClsMongoHelper:

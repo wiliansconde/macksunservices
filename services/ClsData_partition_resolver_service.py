@@ -1,119 +1,162 @@
-from datetime import datetime, timedelta
+# src/repositories/partitioning/ClsPartition_map_repository.py
+
+from datetime import datetime
+from typing import List, Optional
+
+from pymongo.errors import CollectionInvalid
+
+from config.ClsSettings import ClsSettings
+from enums.ClsInstrumentEnum import ClsInstrumentEnum
+from enums.ClsResolutionEnum import ClsResolutionEnum
+from enums.ClsMongoScopeEnum import ClsMongoScopeEnum
 
 from models.partitioning.ClsPartition_map_model import ClsPartitionMapModel
-from repositories.partitioning.ClsPartition_map_repository import ClsPartitionMapRepository
-from enums.ClsResolutionEnum import ClsResolutionEnum
-from enums.ClsInstrumentEnum import ClsInstrumentEnum
+from repositories.base_repositories.ClsMongoHelper import ClsMongoHelper
+from repositories.base_repositories.ClsMongoFactory import ClsMongoFactory
 
-class ClsDataPartitionResolverService:
 
-    def __init__(self):
-        self.repository = ClsPartitionMapRepository()
+class ClsPartitionMapRepository:
+    def find_partitions(
+        self,
+        instrument: ClsInstrumentEnum,
+        resolution: ClsResolutionEnum,
+        start_date: datetime,
+        end_date: datetime
+    ) -> List[ClsPartitionMapModel]:
+        """
+        Retorna uma lista de partitions que abrangem o intervalo informado.
+        """
+        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_PARTITION_MAP)
 
-    def get_target_collection(self, instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum,
-                              timestamp: datetime) -> str:
+        query = {
+            "instrument": instrument.value,
+            "resolution": resolution.value,
+            "start_date": {"$lte": end_date},
+            "end_date": {"$gte": start_date},
+            "status": "active",
+        }
+
         try:
-            start_date, end_date = self._get_date_range(timestamp, resolution)
-            partitions = self.repository.find_partitions(instrument, resolution,  start_date, end_date)
+            documents = collection.find(query).sort("start_date", 1)
+            partitions: List[ClsPartitionMapModel] = []
 
-            if partitions and len(partitions) > 0:
-                collection_name = partitions[0].collection_name
-                print(f"[Partitioning] Collection encontrada: {collection_name}")
-                return collection_name
+            for doc in documents:
+                try:
+                    partitions.append(ClsPartitionMapModel.from_document(doc))
+                except Exception as parse_error:
+                    print(f"[PartitionMap] Erro ao parsear documento {doc.get('_id', 'sem_id')}: {parse_error}")
 
-            print("[Partitioning] Nenhuma collection existente encontrada. Iniciando processo de criação...")
+            return partitions
 
-            # Define nome da nova collection e seu range
-            collection_name = self._generate_collection_name(instrument, resolution, timestamp)
-            #start_date, end_date = self._get_date_range(timestamp, resolution)
+        except Exception as db_error:
+            print(f"[PartitionMap] Erro ao consultar partition map: {db_error}")
+            return []
 
-            # Verifica sobreposição
-            if self.repository.check_overlap(instrument, resolution, start_date, end_date):
-                error_msg = f"[Partitioning] Overlapping partition detected for {instrument.value} {resolution.value} {start_date} - {end_date}."
-                print(error_msg)
-                raise Exception(error_msg)
+    @staticmethod
+    def insert_partition(partition: ClsPartitionMapModel) -> None:
+        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_PARTITION_MAP)
+        collection.insert_one(partition.to_document())
 
-            # Cria nova entrada no mapa de partições
-            new_partition = ClsPartitionMapModel(
-                instrument=instrument.value,
-                resolution=resolution.value,
-                collection_name=collection_name,
-                start_date=start_date,
-                end_date=end_date,
-                storage_backend="MongoDB",
-                status="active",
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
+    def check_overlap(
+        self,
+        instrument: ClsInstrumentEnum,
+        resolution: ClsResolutionEnum,
+        start_date: datetime,
+        end_date: datetime
+    ) -> bool:
+        partitions = self.find_partitions(instrument, resolution, start_date, end_date)
+        return len(partitions) > 0
+
+    def find_prev_partition(
+        self,
+        instrument: ClsInstrumentEnum,
+        resolution: ClsResolutionEnum,
+        day_start: datetime
+    ) -> Optional[ClsPartitionMapModel]:
+        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_PARTITION_MAP)
+
+        doc = collection.find_one(
+            {
+                "instrument": instrument.value,
+                "resolution": resolution.value,
+                "status": "active",
+                "end_date": {"$lt": day_start},
+            },
+            sort=[("end_date", -1)],
+        )
+
+        return ClsPartitionMapModel.from_document(doc) if doc else None
+
+    def find_next_partition(
+        self,
+        instrument: ClsInstrumentEnum,
+        resolution: ClsResolutionEnum,
+        day_end: datetime
+    ) -> Optional[ClsPartitionMapModel]:
+        collection = ClsMongoHelper.get_collection(ClsSettings.MONGO_COLLECTION_PARTITION_MAP)
+
+        doc = collection.find_one(
+            {
+                "instrument": instrument.value,
+                "resolution": resolution.value,
+                "status": "active",
+                "start_date": {"$gt": day_end},
+            },
+            sort=[("start_date", 1)],
+        )
+
+        return ClsPartitionMapModel.from_document(doc) if doc else None
+
+    @staticmethod
+    def create_time_series_collection_if_not_exists(
+        collection_name: str,
+        resolution: ClsResolutionEnum,
+        instrument: ClsInstrumentEnum
+    ) -> None:
+        """
+        Cria a collection de time series no banco do instrumento.
+        O partition_map continua no master, mas os dados ficam no banco do instrumento.
+        """
+        db = ClsMongoFactory.get_db(
+            scope=ClsMongoScopeEnum.INSTRUMENT,
+            instrument_name=instrument.value,
+        )
+
+        if collection_name in db.list_collection_names():
+            return
+
+        try:
+            granularity = ClsPartitionMapRepository._get_granularity_from_resolution(resolution)
+
+            db.create_collection(
+                collection_name,
+                timeseries={
+                    "timeField": "UTC_TIME",
+                    "granularity": granularity,
+                    "bucketMaxSpanSeconds": 3600,
+                },
             )
 
-            try:
-                self.repository.insert_partition(new_partition)
-                self.repository.create_time_series_collection_if_not_exists(collection_name, resolution)
-                print(f"[Partitioning] Nova collection criada com sucesso: {collection_name}")
-            except Exception as insert_error:
-                print(f"[Partitioning] Erro ao criar nova partition ou collection: {insert_error}")
-                raise insert_error
+            db[collection_name].create_index({"DATE": 1})
+            db[collection_name].create_index({"UTC_TIME": 1})
 
-            return collection_name
+            print(f"[REPOSITORY] Collection '{collection_name}' criada como Time Series com granularidade '{granularity}'.")
 
+        except CollectionInvalid:
+            print(f"[REPOSITORY] Collection '{collection_name}' ja existe.")
         except Exception as e:
-            print(f"[Partitioning] Erro ao resolver target collection: {e}")
-            raise e
+            print(f"[REPOSITORY] Erro ao criar time series collection '{collection_name}': {e}")
+            raise
 
-    def get_collections_for_date_range(self, instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum, start_date: datetime, end_date: datetime) -> list:
-        partitions = self.repository.find_partitions(instrument, resolution, start_date, end_date)
-        return [p.collection_name for p in partitions]
+    @staticmethod
+    def _get_granularity_from_resolution(resolution: ClsResolutionEnum) -> str:
+        resolution_value = str(resolution.value).strip().lower()
 
+        if resolution_value.endswith("ms") or resolution_value.endswith("s"):
+            return "seconds"
+        if resolution_value.endswith("m"):
+            return "minutes"
+        if resolution_value.endswith("h"):
+            return "hours"
 
-
-    def _generate_collection_name(self, instrument: ClsInstrumentEnum, resolution: ClsResolutionEnum,
-                                  timestamp: datetime) -> str:
-        year = timestamp.year
-        partition_type = ClsResolutionEnum.get_partition_type(resolution.value)
-
-        if partition_type == "monthly":
-            month = str(timestamp.month).zfill(2)
-            return f"data_{instrument.value}_{resolution.value}_{year}_{month}"
-
-        elif partition_type == "semiannual":
-            semester = "S1" if timestamp.month <= 6 else "S2"
-            return f"data_{instrument.value}_{resolution.value}_{year}_{semester}"
-
-        elif partition_type == "annual":
-            return f"data_{instrument.value}_{resolution.value}_{year}"
-
-        else:
-            raise ValueError(f"Tipo de particionamento desconhecido para resolução: {resolution.value}")
-
-
-
-    def _get_date_range(self, timestamp: datetime, resolution: ClsResolutionEnum):
-        #PArtition_map definicao da granularidade. wconde
-        resolution_value = resolution.value.lower()
-
-        if resolution_value.endswith("ms"):
-            numeric_value = int(resolution_value.replace("ms", ""))
-            if numeric_value < 100:
-                #  mensal
-                start_date = datetime(timestamp.year, timestamp.month, 1)
-                if timestamp.month == 12:
-                    end_date = datetime(timestamp.year + 1, 1, 1) - timedelta(seconds=1)
-                else:
-                    end_date = datetime(timestamp.year, timestamp.month + 1, 1) - timedelta(seconds=1)
-                return start_date, end_date
-            else:
-                #  semestral
-                semester = 1 if timestamp.month <= 6 else 2
-                start_month = 1 if semester == 1 else 7
-                start_date = datetime(timestamp.year, start_month, 1)
-                end_month = 6 if semester == 1 else 12
-                end_day = 30 if end_month == 6 else 31
-                end_date = datetime(timestamp.year, end_month, end_day, 23, 59, 59)
-                return start_date, end_date
-        else:
-            #  1s ou acima = anual
-            start_date = datetime(timestamp.year, 1, 1)
-            end_date = datetime(timestamp.year, 12, 31, 23, 59, 59)
-            return start_date, end_date
-
-
+        raise ValueError(f"Resolucao '{resolution_value}' nao suportada para granularidade de time series.")

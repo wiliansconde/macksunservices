@@ -392,20 +392,49 @@ class run_job_read_local_files_and_insert_into_queue:
         print(f"[{datetime.now()}] [Ingestor] Total movido para 00_ignored: {moved_to_ignored_count} arquivos.")
         print(f"[{datetime.now()}] [Ingestor] Total com erro: {error_count} arquivos.\n")
 
+def main(argv=None) -> int:
+    argv = argv or sys.argv
 
-if __name__ == "__main__":
-    if len(sys.argv) not in (3, 4, 5):
-        print("Uso: python run_job_read_local_files_and_insert_into_queue.py <diretorio> <instrument_name> <debug opcional 0 ou 1> <reprocess_all opcional 0 ou 1>")
-        sys.exit(1)
+    # Valores padrão para executar manualmente no PyCharm sem argumentos
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    default_directory = r"K:\Dados\_FINAL\POEMAS\2012\M02\D01"
+    default_instrument_name = "POEMAS"
+    default_debug = True
+    default_reprocess_all = True
 
-    directory = sys.argv[1]
-    instrument_name = sys.argv[2]
+    # Modo PyCharm: sem argumentos, usa defaults
+    if len(argv) == 1:
+        directory = default_directory
+        instrument_name = default_instrument_name
+        debug = default_debug
+        reprocess_all = default_reprocess_all
+
+        print("[Ingestor] Executando em modo PyCharm com valores padrao")
+        print(f"[Ingestor] directory: {directory}")
+        print(f"[Ingestor] instrument_name: {instrument_name}")
+        print(f"[Ingestor] debug: {int(debug)}")
+        print(f"[Ingestor] reprocess_all: {int(reprocess_all)}")
+
+        run_job_read_local_files_and_insert_into_queue.run(directory, instrument_name, debug, reprocess_all)
+        return 0
+
+    # Modo linha de comando: valida argumentos
+    if len(argv) not in (3, 4, 5):
+        print(
+            "Uso: python run_job_read_local_files_and_insert_into_queue.py "
+            "<diretorio> <instrument_name> <debug opcional 0 ou 1> <reprocess_all opcional 0 ou 1>"
+        )
+        print("Exemplo: python run_job_read_local_files_and_insert_into_queue.py ./data/inbox POEMAS 1 0")
+        return 1
+
+    directory = argv[1]
+    instrument_name = argv[2]
 
     debug_env = os.getenv("INGESTOR_DEBUG", "0")
     reprocess_env = os.getenv("INGESTOR_REPROCESS_ALL", "0")
 
-    debug_arg = sys.argv[3] if len(sys.argv) >= 4 else None
-    reprocess_arg = sys.argv[4] if len(sys.argv) == 5 else None
+    debug_arg = argv[3] if len(argv) >= 4 else None
+    reprocess_arg = argv[4] if len(argv) == 5 else None
 
     debug = (
         run_job_read_local_files_and_insert_into_queue._to_bool(debug_arg)
@@ -419,7 +448,12 @@ if __name__ == "__main__":
 
     try:
         run_job_read_local_files_and_insert_into_queue.run(directory, instrument_name, debug, reprocess_all)
+        return 0
     except Exception:
         print("[Erro] Excecao inesperada:")
         traceback.print_exc()
-        sys.exit(2)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -67,6 +67,7 @@ class ClsPoemasFileService:
         service = ClsPoemasFileService(file_path)
         service.process_records()
         file_timestamp = datetime.strptime(service.records[0].DATE, "%Y-%m-%d")
+        #file_timestamp = datetime.strptime("2012-12-12", "%Y-%m-%d")
         instrument = ClsInstrumentEnum.POEMAS
         resolution = ClsResolutionEnum.Milliseconds_10
         controller = ClsPartitionMapController()
