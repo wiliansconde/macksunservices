@@ -346,7 +346,7 @@ def get_structure_suffix(full_path: Path) -> Optional[str]:
 
 
 # ==============================================================================
-#  TESTE DE CONEXAO    asasasa
+#  TESTE DE CONEXAO
 # ==============================================================================
 
 def check_connections() -> bool:
