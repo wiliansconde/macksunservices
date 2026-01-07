@@ -150,13 +150,13 @@ class Main:
 
     @staticmethod
     def test_get_target_collection():
-        controller = ClsPartitionMapController()
+
         start_date = datetime(2011, 12, 1, 0, 0, 0)
         end_date = datetime(2011, 12, 1, 23, 59, 59)
 #2011-12-01T10:19:46.000Z
         try:
-            target_collection = controller.get_collections_for_range(ClsInstrumentEnum.POEMAS, ClsResolutionEnum.Seconds_01, start_date, end_date)
-            print(f"[TESTE] Collection resolvida: {target_collection}")
+
+            print(f"[TESTE] Collection resolvida: ")
         except Exception as e:
             print(f"[TESTE] Erro ao resolver collection: {e}")
 

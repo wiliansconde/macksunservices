@@ -5,8 +5,8 @@ import os
 
 class ClsSettings:
      # # Configurações do MongoDB ** LOCAL **
-     MONGO_HOST = os.getenv('MONGO_HOST', 'localhost')
-     MONGO_PORT = int(os.getenv('MONGO_PORT', 27027)) #27031 STAND -27027 SHARDING - LINEA: 27017
+     MONGO_HOST = os.getenv('MONGO_HOST', 'localhost')  # SHARDING:localhost linea: 186.232.60.84
+     MONGO_PORT = int(os.getenv('MONGO_PORT', 27017))   #SHARDING: 27027  - LINEA: 27017
      MONGO_DB_MASTER = os.getenv('MONGO_DB_DATA', 'craam_master')
      MONGO_DB_PORTAL = os.getenv('MONGO_DB_PORTAL', 'macksundb')
      MONGO_USER = os.getenv('MONGO_USER', '')
@@ -41,6 +41,9 @@ class ClsSettings:
              uri = f"mongodb://{ClsSettings.MONGO_USER}:{ClsSettings.MONGO_PASSWORD}@{ClsSettings.MONGO_HOST}:{ClsSettings.MONGO_PORT}/{ClsSettings.MONGO_DB_MASTER}"
          else:
              uri = f"mongodb://{ClsSettings.MONGO_HOST}:{ClsSettings.MONGO_PORT}/{ClsSettings.MONGO_DB_MASTER}"
+
+         print("")
+         print("")
 
          print("[DEBUG][Settings] get_mongo_data_uri")
          print(f"[DEBUG][Settings] MONGO_HOST={ClsSettings.MONGO_HOST}")
