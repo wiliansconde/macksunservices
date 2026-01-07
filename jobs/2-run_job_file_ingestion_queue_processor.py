@@ -1,6 +1,11 @@
+import os
 import sys
 import traceback
 from datetime import datetime
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+
 from controllers.queue.ClsFileQueueController import ClsFileQueueController
 from controllers.queue.ClsGenerateFileToExportQueueController import ClsGenerateFileToExportQueueController
 
