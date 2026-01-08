@@ -30,7 +30,7 @@ class ClsMongoFactory:
             if isinstance(params, dict) and params.get("authSource"):
                 auth_source = str(params.get("authSource"))
 
-            client = ClsMongoClientProvider.get_instrument_client(entry.host, entry.port, auth_source=auth_source)
+            client = ClsMongoClientProvider.get_instrument_client(entry.host, entry.port)
             return client[entry.db_name]
 
         raise ValueError(f"Scope nao suportado: {scope}")

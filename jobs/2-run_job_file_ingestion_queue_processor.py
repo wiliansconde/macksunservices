@@ -47,7 +47,7 @@ class run_job_file_ingestion_queue_processor:
     def run():
         try:
 
-            print(f"[{datetime.now()}] ***********   INICIO JOB 2 V.3  *******************")
+            print(f"[{datetime.now()}] ***********   INICIO JOB 2 V.4.0  *******************")
             total = ClsFileQueueController.count_pending_files()
             print(f"[{datetime.now()}] [Processor] Iniciando processamento de {total} arquivos na fila...")
 
@@ -57,8 +57,8 @@ class run_job_file_ingestion_queue_processor:
 
             print(f"[{datetime.now()}] [Processor] Processamento concluído.")
 
-        except Exception:
-            print("[Erro] Exceção inesperada ao processar fila:")
+        except Exception as e :
+            print("[Erro] Exceção inesperada ao processar fila: " + str(e))
             traceback.print_exc()
             sys.exit(2)
 
