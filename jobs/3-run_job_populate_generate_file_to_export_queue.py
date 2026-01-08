@@ -1,6 +1,10 @@
+import os
 import sys
 import traceback
 from datetime import datetime
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from controllers.queue.ClsGenerateFileToExportQueueController import ClsGenerateFileToExportQueueController
 
 """
@@ -40,7 +44,7 @@ class run_job_populate_generate_file_queue:
         try:
             print()
             print()
-            print("**************       JOB 3 - V.1.0       **********")
+            print("**************       JOB 3 - V.1.1      **********")
 
             print(f"[{datetime.now()}] [GenerateQueueJob] Iniciando atualização da fila de geração de arquivos...")
             ClsGenerateFileToExportQueueController.populate_queue_from_stats()

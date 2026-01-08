@@ -1,8 +1,10 @@
 # jobs/run_job_sync_processed_file_trace_to_cloud.py
-
+import os
 import sys
 import traceback
 from datetime import datetime
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from controllers.export_to_cloud.ClsProcessedFileTraceSyncController import ClsProcessedFileTraceSyncController
 

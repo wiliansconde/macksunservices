@@ -3,6 +3,9 @@ import traceback
 import os
 import uuid
 from datetime import datetime
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from controllers.partitioning.ClsPartition_map_controller import ClsPartitionMapController
 from controllers.queue.ClsGenerateFileToExportQueueController import ClsGenerateFileToExportQueueController
 from enums.ClsInstrumentEnum import ClsInstrumentEnum
