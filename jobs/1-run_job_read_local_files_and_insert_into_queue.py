@@ -397,7 +397,7 @@ def main(argv=None) -> int:
 
     # Valores padrão para executar manualmente no PyCharm sem argumentos
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    default_directory = r"K:\Dados\_FINAL\POEMAS\2012\M02\D01"
+    default_directory = r"K:\Dados\_FINAL\POEMAS\2012\M02\D04"
     default_instrument_name = "POEMAS"
     default_debug = True
     default_reprocess_all = True

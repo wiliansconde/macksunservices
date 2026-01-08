@@ -38,6 +38,10 @@ class run_job_populate_generate_file_queue:
     @staticmethod
     def run():
         try:
+            print()
+            print()
+            print("**************       JOB 3 - V.1.0       **********")
+
             print(f"[{datetime.now()}] [GenerateQueueJob] Iniciando atualização da fila de geração de arquivos...")
             ClsGenerateFileToExportQueueController.populate_queue_from_stats()
             print(f"[{datetime.now()}] [GenerateQueueJob] Fila de geração de arquivos atualizada com sucesso.")
