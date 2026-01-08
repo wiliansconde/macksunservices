@@ -111,20 +111,88 @@ class ClsPartitionMapRepository:
 
     @staticmethod
     def create_time_series_collection_if_not_exists(
-        collection_name: str,
-        resolution: ClsResolutionEnum,
-        instrument: ClsInstrumentEnum
+            collection_name: str,
+            resolution: ClsResolutionEnum,
+            instrument: ClsInstrumentEnum
     ):
+        print("[REPOSITORY][TS] inicio create_time_series_collection_if_not_exists")
+        print("[REPOSITORY][TS] collection_name:", collection_name)
+        print("[REPOSITORY][TS] instrument:", instrument)
+        print("[REPOSITORY][TS] resolution:", resolution)
+
+        print("[REPOSITORY][TS] chamando ClsMongoFactory.get_db")
         db = ClsMongoFactory.get_db(
             scope=ClsMongoScopeEnum.INSTRUMENT,
             instrument_name=instrument.value,
         )
 
-        if collection_name in db.list_collection_names():
+        print("[REPOSITORY][TS] db obtido com sucesso")
+        print("[REPOSITORY][TS] type(db):", type(db))
+        print("[REPOSITORY][TS] repr(db):", repr(db))
+        print("[REPOSITORY][TS] db.name:", getattr(db, "name", None))
+
+        client = getattr(db, "client", None)
+        print("[REPOSITORY][TS] db.client:", client)
+        print("[REPOSITORY][TS] type(client):", type(client))
+
+        if client is not None:
+            try:
+                print("[REPOSITORY][TS] client.address:", getattr(client, "address", None))
+            except Exception as e:
+                print("[REPOSITORY][TS] erro client.address:", e)
+
+            try:
+                print("[REPOSITORY][TS] client.nodes:", getattr(client, "nodes", None))
+            except Exception as e:
+                print("[REPOSITORY][TS] erro client.nodes:", e)
+
+            try:
+                print("[REPOSITORY][TS] client.primary:", getattr(client, "primary", None))
+            except Exception as e:
+                print("[REPOSITORY][TS] erro client.primary:", e)
+
+            try:
+                print("[REPOSITORY][TS] client.options:", getattr(client, "options", None))
+            except Exception as e:
+                print("[REPOSITORY][TS] erro client.options:", e)
+
+            try:
+                address = getattr(client, "address", None)
+                if address:
+                    print("[REPOSITORY][TS] mongo_host:", address[0])
+                    print("[REPOSITORY][TS] mongo_port:", address[1])
+            except Exception as e:
+                print("[REPOSITORY][TS] erro host porta:", e)
+
+            try:
+                print("[REPOSITORY][TS] listando databases visiveis")
+                db_names = client.list_database_names()
+                print("[REPOSITORY][TS] databases:", db_names)
+            except Exception as e:
+                print("[REPOSITORY][TS] erro list_database_names:", e)
+
+        try:
+            print("[REPOSITORY][TS] listando collections existentes no db")
+            existing_collections = db.list_collection_names()
+            print("[REPOSITORY][TS] collections existentes:", existing_collections)
+        except Exception as e:
+            print("[ERRO][TS] falha list_collection_names:", e)
+            raise
+
+        if collection_name in existing_collections:
+            print("[REPOSITORY][TS] collection ja existe, retorno imediato")
             return
 
         try:
+            print("[REPOSITORY][TS] resolvendo granularidade")
             granularity = ClsPartitionMapRepository._get_granularity_from_resolution(resolution)
+            print("[REPOSITORY][TS] granularidade resolvida:", granularity)
+
+            print("[REPOSITORY][TS] criando collection time series")
+            print("[REPOSITORY][TS] parametros:")
+            print("  timeField = UTC_TIME")
+            print("  granularity =", granularity)
+            print("  bucketMaxSpanSeconds = 3600")
 
             db.create_collection(
                 collection_name,
@@ -135,13 +203,31 @@ class ClsPartitionMapRepository:
                 },
             )
 
-            db[collection_name].create_index({"DATE": 1})
-            db[collection_name].create_index({"UTC_TIME": 1})
+            print("[REPOSITORY][TS] collection criada com sucesso")
 
-            print(f"[REPOSITORY] Collection {collection_name} criada como Time Series com granularidade {granularity}")
+            print("[REPOSITORY][TS] criando indice DATE")
+            db[collection_name].create_index({"DATE": 1})
+            print("[REPOSITORY][TS] indice DATE criado")
+
+            print("[REPOSITORY][TS] criando indice UTC_TIME")
+            db[collection_name].create_index({"UTC_TIME": 1})
+            print("[REPOSITORY][TS] indice UTC_TIME criado")
+
+            print(
+                "[REPOSITORY][TS] collection criada como time series:",
+                collection_name,
+                "granularidade:",
+                granularity,
+            )
 
         except CollectionInvalid:
-            print(f"[REPOSITORY] Collection {collection_name} ja existe")
+            print("[REPOSITORY][TS] CollectionInvalid collection ja existe")
+
+        except Exception as e:
+            print("[ERRO][TS] excecao inesperada durante criacao da collection")
+            print("[ERRO][TS] tipo:", type(e))
+            print("[ERRO][TS] erro:", e)
+            raise
 
     @staticmethod
     def _get_granularity_from_resolution(resolution: ClsResolutionEnum) -> str:
