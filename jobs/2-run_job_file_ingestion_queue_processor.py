@@ -47,7 +47,7 @@ class run_job_file_ingestion_queue_processor:
     def run():
         try:
 
-            print(f"[{datetime.now()}] ***********   INICIO JOB 2 V.4.0  *******************")
+            print(f"[{datetime.now()}] ***********   INICIO JOB 2 V.4.1  *******************")
             total = ClsFileQueueController.count_pending_files()
             print(f"[{datetime.now()}] [Processor] Iniciando processamento de {total} arquivos na fila...")
 
