@@ -39,6 +39,7 @@ Requisitos:
     - Python 3.7+
     - Executar a partir da raiz do projeto com `-m`
     - ClsFileQueueController acessível em controllers.queue
+    
 """
 
 class run_job_file_ingestion_queue_processor:
